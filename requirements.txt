@@ -1,0 +1,7 @@
+numpy
+scipy
+graphviz
+scikit-learn
+matplotlib
+aalpy
+dynet

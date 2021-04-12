@@ -1,0 +1,25 @@
+digraph MQTT_Mealy_machine {
+0 [label=0];
+1 [label=1];
+2 [label=2];
+0 -> 1  [label="connect/CONNACK"];
+0 -> 0  [label="disconnect/CONCLOSED"];
+0 -> 0  [label="subscribe/CONCLOSED"];
+0 -> 0  [label="publish/CONCLOSED"];
+0 -> 0  [label="unsubscribe/CONCLOSED"];
+0 -> 0  [label="invalid/CONCLOSED"];
+1 -> 0  [label="connect/CONCLOSED"];
+1 -> 0  [label="disconnect/CONCLOSED"];
+1 -> 0  [label="invalid/CONCLOSED"];
+1 -> 2  [label="subscribe/SUBACK"];
+1 -> 1  [label="publish/PUBACK"];
+1 -> 1  [label="unsubscribe/UNSUBACK"];
+2 -> 0  [label="connect/CONCLOSED"];
+2 -> 0  [label="disconnect/CONCLOSED"];
+2 -> 0  [label="invalid/CONCLOSED"];
+2 -> 2  [label="subscribe/SUBACK"];
+2 -> 2  [label="publish/PUBACK__PUBLISH"];
+2 -> 1  [label="unsubscribe/UNSUBACK"];
+__start0 [label="", shape=none];
+__start0 -> 0  [label=""];
+}
