@@ -4,27 +4,28 @@ from aalpy.learning_algs import run_Lstar
 from aalpy.oracles import StatePrefixEqOracle, RandomWalkEqOracle
 from aalpy.utils import load_automaton_from_file, save_automaton_to_file
 
-from DataProcessing import generate_data_from_mealy, split_train_validation, tokenized_dict, tokenize
+from DataProcessing import generate_data_from_mealy, split_train_validation, tokenized_dict, tokenize, \
+    generate_data_based_on_characterization_set
 from LongCexEqOracle import LongCexEqOracle
 from RNNClassifier import RNNClassifier
 from RNN_SULs import RnnMealySUL
 
 
-def learning_based_testing_against_correct_model(model_1_path, model_2_path, cex_rounds=10,
+def learning_based_testing_against_correct_model(model_correct_path, model_learned_path, cex_rounds=10,
                                                  automaton_type='mealy'):
-    model_1 = load_automaton_from_file(model_1_path, compute_prefixes=True, automaton_type=automaton_type)
-    model_2 = load_automaton_from_file(model_2_path, compute_prefixes=True, automaton_type=automaton_type)
+    model_correct = load_automaton_from_file(model_correct_path, compute_prefixes=True, automaton_type=automaton_type)
+    model_learned = load_automaton_from_file(model_learned_path, compute_prefixes=True, automaton_type=automaton_type)
 
-    alphabet = model_1.get_input_alphabet()
-    model_1_sul = DfaSUL(model_1) if automaton_type == 'dfa' else MealySUL(model_1)
+    alphabet = model_correct.get_input_alphabet()
+    model_1_sul = DfaSUL(model_learned) if automaton_type == 'dfa' else MealySUL(model_learned)
 
     eq_oracle = RandomWalkEqOracle(alphabet, model_1_sul, num_steps=5000, reset_prob=0.09, reset_after_cex=True)
     eq_oracle = LongCexEqOracle(alphabet, model_1_sul, num_walks=500, min_walk_len=1, max_walk_len=20, reset_after_cex=True)
-    eq_oracle = StatePrefixEqOracle(alphabet, model_1_sul, walks_per_state=100, walk_len=15)
+    eq_oracle = StatePrefixEqOracle(alphabet, model_1_sul, walks_per_state=100, walk_len=20)
 
     cex_set = set()
     for i in range(cex_rounds):
-        cex = eq_oracle.find_cex(model_2)
+        cex = eq_oracle.find_cex(model_correct)
         if cex:
             cex_set.add(tuple(cex))
 
@@ -75,7 +76,7 @@ def train_extract_retrain(path_mealy_machine, ex_name,
     eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=250, walk_len=15)
 
     mealy = run_Lstar(alphabet=input_al, sul=sul, eq_oracle=eq_oracle, automaton_type=formalism,
-                      cache_and_non_det_check=False, max_learning_rounds=10)
+                      cache_and_non_det_check=False, max_learning_rounds=10, suffix_closedness=False)
 
     save_automaton_to_file(mealy, f'LearnedAutomata/learned_{ex_name}')
 
@@ -121,9 +122,15 @@ def train_extract_retrain(path_mealy_machine, ex_name,
         eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=250, walk_len=15)
 
         mealy = run_Lstar(alphabet=input_al, sul=sul, eq_oracle=eq_oracle, automaton_type=formalism,
-                          cache_and_non_det_check=False, max_learning_rounds=5, suffix_closedness=True)
+                          cache_and_non_det_check=False, max_learning_rounds=5, suffix_closedness=False)
 
         save_automaton_to_file(mealy, f'LearnedAutomata/learned_{ex_name}')
 
 if __name__ == '__main__':
-    train_extract_retrain('TrainingDataAndAutomata/MQTT.dot', ex_name='mqtt_lbt', lens=(10, 12), load=False, num_train_samples=5000)
+
+
+    seq, labels = generate_data_based_on_characterization_set('TrainingDataAndAutomata/MQTT.dot')
+    print(seq)
+    print(labels)
+
+    # train_extract_retrain('TrainingDataAndAutomata/MQTT.dot', ex_name='mqtt_lbt', lens=(10, 12), load=False, num_train_samples=5000)

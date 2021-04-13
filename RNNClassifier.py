@@ -1,3 +1,6 @@
+import dynet_config
+
+dynet_config.set(mem='2048', autobatch=0)
 import dynet as dy
 import numpy as np
 
@@ -9,7 +12,7 @@ class RNNClassifier:
                  batch_size=32, nn_type="LSTM"):
         assert nn_type in nn_type_options
         self.vocab_size = len(alphabet) + 1
-        input_dim = self.vocab_size
+        input_dim = self.vocab_size - 1
         num_of_classes = len(set(y_train)) if not y_test else len(set(y_test).union(set(y_train)))
 
         self.state = None
@@ -19,7 +22,7 @@ class RNNClassifier:
 
         self.pc = dy.ParameterCollection()
         self.input_lookup = self.pc.add_lookup_parameters((self.vocab_size, input_dim))  # TODO DOUBLE-CHECK
-        self.W = self.pc.add_parameters((input_dim, hidden_dim))  # TODO DOUBLE-CHECK
+        self.W = self.pc.add_parameters((num_of_classes, hidden_dim))  # TODO DOUBLE-CHECK
         nn_fun = dy.LSTMBuilder if nn_type == "LSTM" else dy.GRUBuilder
         self.rnn = nn_fun(num_layers, input_dim, hidden_dim, self.pc)
 
@@ -64,8 +67,8 @@ class RNNClassifier:
         return w * output_vec
 
     # either define stop loss, or stop acc and for how many epochs acc must not fall lower than it
-    def train(self, epochs=10000, stop_acc=0.99, stop_epochs=3, stop_loss=0.0005, max_epochs=1000, verbose=True):
-        assert 0 < stop_acc <= 1
+    def train(self, epochs=10000, stop_acc=0.99, stop_epochs=3, stop_loss=0.0005, verbose=True):
+        assert 0 < stop_acc <= 1.1
         print('Starting train')
         trainer = dy.AdamTrainer(self.pc)
         avg_loss = []
@@ -81,8 +84,11 @@ class RNNClassifier:
             avg_loss.append(np.mean(loss_values))
             acc_train, acc_test = self.validate()
             if verbose:
-                print(f'Epoch {i}: Accuracy {acc_train.round(5)}, Avg. Loss {avg_loss[-1].round(5)} '
-                      f'Validation Accuracy {acc_test.round(5)}')
+                if acc_test != 999.0:
+                    print(f'Epoch {i}: Accuracy {acc_train.round(5)}, Avg. Loss {avg_loss[-1].round(5)} '
+                          f'Validation Accuracy {acc_test.round(5)}')
+                else:
+                    print(f'Epoch {i}: Accuracy {acc_train.round(5)}, Avg. Loss {avg_loss[-1].round(5)} ')
 
             if acc_train >= stop_acc and acc_test >= stop_acc:
                 num_epos_above_threshold += 1
@@ -116,7 +122,7 @@ class RNNClassifier:
                         acc_test.append(1)
                     else:
                         acc_test.append(0)
-        return np.mean(acc_train), np.mean(acc_test) if self.x_test else np.mean(0.0)
+        return np.mean(acc_train), np.mean(acc_test) if self.x_test else np.mean(999.0)
 
     def predict(self, string: str):
         w = self.W.expr(update=False)

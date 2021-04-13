@@ -25,7 +25,7 @@ def preprocess_binary_classification_data(x, y, alphabet):
     return x_train, y_train, x_test, y_test
 
 
-def split_train_validation(x_values, y_values, ratio=0.8, uniform = False):
+def split_train_validation(x_values, y_values, ratio=0.8, uniform=False):
     num_cat = len(set(y_values))
     x_train, y_train, x_test, y_test = None, None, None, None
     target_cat = 0
@@ -50,7 +50,8 @@ def tokenized_dict(alphabet):
 
 
 def seq_to_tokens(word, lookup_dict: dict):
-    return [lookup_dict[letter] for letter in word] if isinstance(word, (list, tuple)) else lookup_dict[word] if word else []
+    return [lookup_dict[letter] for letter in word] if isinstance(word, (list, tuple)) else lookup_dict[
+        word] if word else []
 
 
 def get_mqtt_mealy():
@@ -97,3 +98,39 @@ def generate_data_from_mealy(mealy_machine, input_al, num_examples, lens=(1, 2, 
 def tokenize(seq, alphabet):
     dictionary = tokenized_dict(alphabet)
     return [seq_to_tokens(word, dictionary) for word in seq]
+
+
+def generate_data_based_on_characterization_set(automaton, automaton_type='mealy'):
+    from aalpy.SULs import MealySUL, DfaSUL
+    from aalpy.oracles import RandomWalkEqOracle
+    from aalpy.learning_algs import run_Lstar
+
+    #automaton = load_automaton_from_file(path_to_automaton, automaton_type)
+    alphabet = automaton.get_input_alphabet()
+    eq_oracle = RandomWalkEqOracle(alphabet, automaton, num_steps=5000, reset_prob=0.09, reset_after_cex=True)
+
+    sul = DfaSUL(automaton) if automaton_type == 'dfa' else MealySUL(automaton)
+
+    automaton, data = run_Lstar(alphabet, sul, eq_oracle, automaton_type=automaton_type,
+                                print_level=0, return_data=True, suffix_closedness=False)
+
+    characterization_set = data['characterization set']
+
+    prefixes = [state.prefix for state in automaton.states]
+
+    sequences = [p + e for e in characterization_set for p in prefixes]
+
+    labels = [sul.query(s)[-1] for s in sequences]
+
+    sequences = [list(s) for s in sequences]
+
+    input_al = automaton.get_input_alphabet()
+    output_al = {output for state in automaton.states for output in state.output_fun.values()}
+
+    input_dict = tokenized_dict(input_al)
+    out_dict = tokenized_dict(output_al)
+
+    train_seq = [seq_to_tokens(word, input_dict) for word in sequences]
+    train_labels = [seq_to_tokens(word, out_dict) for word in labels]
+
+    return train_seq, train_labels

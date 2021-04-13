@@ -7,7 +7,8 @@ from aalpy.oracles import StatePrefixEqOracle, TransitionFocusOracle, RandomWalk
 from aalpy.utils import save_automaton_to_file, visualize_automaton, load_automaton_from_file
 
 from DataProcessing import parse_data, preprocess_binary_classification_data, generate_data_from_mealy, \
-    split_train_validation, get_mqtt_mealy, get_coffee_machine, tokenized_dict
+    split_train_validation, get_mqtt_mealy, get_coffee_machine, tokenized_dict, \
+    generate_data_based_on_characterization_set
 from LearningBasedTesting import learning_based_testing_against_correct_model, training_data_from_cex_set
 from RNNClassifier import RNNClassifier
 from RNN_SULs import RnnBinarySUL, RnnMealySUL
@@ -90,20 +91,24 @@ def train_and_extract_bp(path="TrainingDataAndAutomata/balanced()_1.txt", load=F
 
 def train_and_extract_mealy(mealy_machine: MealyMachine, ex_name,
                             lens=(2,8,10,12,15),
-                            num_train_samples=50000, load=False, formalism='mealy', extract_automaton = False):
+                            num_train_samples=100000, load=False, formalism='mealy', extract_automaton = False):
     assert formalism in ['mealy', 'moore']
 
     input_al = mealy_machine.get_input_alphabet()
 
     train_seq, train_labels = generate_data_from_mealy(mealy_machine, input_al,
                                                        num_examples=num_train_samples, lens=lens)
+
+    #train_seq, train_labels = generate_data_based_on_characterization_set(mealy_machine)
+
     x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8)
+    #x_train, y_train, x_test, y_test = train_seq, train_labels, None, None
 
     rnn = RNNClassifier(input_al, num_layers=4, hidden_dim=50, x_train=x_train,
                         y_train=y_train, x_test=x_test, y_test=y_test, batch_size=32, nn_type="GRU")
 
     if not load:
-        rnn.train(epochs=100, stop_acc=1.0, stop_epochs=3)
+        rnn.train(epochs=1000, stop_acc=1.0, stop_epochs=3)
         rnn.save(f'RNN_Models/{ex_name}.rnn')
     else:
         rnn.load(f'RNN_Models/{ex_name}.rnn')
@@ -119,6 +124,7 @@ def train_and_extract_mealy(mealy_machine: MealyMachine, ex_name,
 
     eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=100, walk_len=20)
 
+    print('start learning')
     mealy = run_Lstar(alphabet=input_al, sul=sul, eq_oracle=eq_oracle, automaton_type=formalism,
                       cache_and_non_det_check=True, max_learning_rounds=10)
 
@@ -134,9 +140,10 @@ if __name__ == '__main__':
     # coffee_1 -> lens=(3,5,7,10,12), num_train_samples=50000
     # coffee_2 -> lens=(2,8,10,12,15), num_train_samples=50000
 
-    train_and_extract_mealy(get_coffee_machine(), ex_name='coffee_2', lens=(1,3, 5, 10, 12,15), load=True, extract_automaton = True)
+    tcp = load_automaton_from_file('TrainingDataAndAutomata/TCP_Linux_Client.dot', 'mealy')
+    train_and_extract_mealy(tcp, ex_name='tcp', lens=(1, 3, 5, 8, 10, 12, 15, 20), load=False, extract_automaton = False)
 
-    cex_set = learning_based_testing_against_correct_model('TrainingDataAndAutomata/Coffee_machine.dot', 'LearnedAutomata/learned_coffee_2.dot', cex_rounds=10)
-    print(cex_set)
-    training_x, training_y = training_data_from_cex_set(cex_set, 'TrainingDataAndAutomata/Coffee_machine.dot')
-    print(training_x, training_y)
+    # cex_set = learning_based_testing_against_correct_model('TrainingDataAndAutomata/Coffee_machine.dot', 'LearnedAutomata/learned_coffee_2.dot', cex_rounds=10)
+    # print(cex_set)
+    # training_x, training_y = training_data_from_cex_set(cex_set, 'TrainingDataAndAutomata/Coffee_machine.dot')
+    # print(training_x, training_y)
