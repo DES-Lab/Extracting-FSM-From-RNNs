@@ -2,7 +2,7 @@
 
 ## Structure of the project:
 - `LearnedAutomata/` - automata representing behaviour of RNN's inferred via automata learning
-- `TrainingDataAndModels/` - data and models used for RNN training and verification 
+- `TrainingDataAndAutomata/` - data and automata used for RNN training and verification 
 - `Weiss_et_al/` - code from paper [Extracting Automata from Recurrent Neural Networks Using Queries and Counterexamples ](https://github.com/tech-srl/lstar_extraction)
 ###
 - `Comparison_Weiss.py` - comparison of our approach to [Weiss et al.](https://github.com/tech-srl/lstar_extraction)

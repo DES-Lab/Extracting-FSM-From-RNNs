@@ -1,16 +1,18 @@
 import string
 
+from aalpy.SULs import DfaSUL, MealySUL
 from aalpy.automata import MealyMachine
 from aalpy.learning_algs import run_Lstar
-from aalpy.oracles import StatePrefixEqOracle, TransitionFocusOracle
-from aalpy.utils import save_automaton_to_file, visualize_automaton
+from aalpy.oracles import StatePrefixEqOracle, TransitionFocusOracle, RandomWalkEqOracle
+from aalpy.utils import save_automaton_to_file, visualize_automaton, load_automaton_from_file
 
 from DataProcessing import parse_data, preprocess_binary_classification_data, generate_data_from_mealy, \
     split_train_validation, get_mqtt_mealy, get_coffee_machine, tokenized_dict
+from LearningBasedTesting import learning_based_testing_against_correct_model, training_data_from_cex_set
 from RNNClassifier import RNNClassifier
 from RNN_SULs import RnnBinarySUL, RnnMealySUL
 
-tomita_dict = {l: f'TrainingDataAndModels/tomita{l}.txt' for l in [-3, 1, 2, 3, 4, 5, 6, 7]}
+tomita_dict = {l: f'TrainingDataAndAutomata/tomita{l}.txt' for l in [-3, 1, 2, 3, 4, 5, 6, 7]}
 
 
 def train_RNN_on_tomita_grammar(tomita_grammar, acc_stop=1., loss_stop=0.005, train=True):
@@ -23,7 +25,7 @@ def train_RNN_on_tomita_grammar(tomita_grammar, acc_stop=1., loss_stop=0.005, tr
     x_train, y_train, x_test, y_test = preprocess_binary_classification_data(x, y, tomita_alphabet)
 
     # TODO CHANGE PARAMETERS OF THE RNN if you want
-    rnn = RNNClassifier(tomita_alphabet, num_layers=2, input_dim=len(tomita_alphabet), hidden_dim=50, batch_size=18,
+    rnn = RNNClassifier(tomita_alphabet, num_layers=2, hidden_dim=50, batch_size=18,
                         x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, nn_type="LSTM")
 
     if train:
@@ -54,14 +56,14 @@ def train_and_extract_tomita(tomita_grammar, acc_stop=1., loss_stop=0.005, load=
     visualize_automaton(dfa)
 
 
-def train_and_extract_bp(path="TrainingDataAndModels/balanced()_1.txt", load=False):
+def train_and_extract_bp(path="TrainingDataAndAutomata/balanced()_1.txt", load=False):
     bp_alphabet = list(string.ascii_lowercase + "()")
 
     x, y = parse_data(path)
     x_train, y_train, x_test, y_test = preprocess_binary_classification_data(x, y, bp_alphabet)
 
     # TODO CHANGE PARAMETERS OF THE RNN if you want
-    rnn = RNNClassifier(bp_alphabet, num_layers=4, input_dim=len(bp_alphabet), hidden_dim=50, x_train=x_train,
+    rnn = RNNClassifier(bp_alphabet, num_layers=4, hidden_dim=50, x_train=x_train,
                         y_train=y_train,
                         x_test=x_test, y_test=y_test, batch_size=18, nn_type="GRU")
 
@@ -86,8 +88,9 @@ def train_and_extract_bp(path="TrainingDataAndModels/balanced()_1.txt", load=Fal
     return dfa
 
 
-def train_and_extract_mealy(mealy_machine: MealyMachine, ex_name, lens=(1, 2, 3, 5, 6, 8, 9, 10, 20),
-                            num_train_samples=15000, load=False, formalism ='mealy'):
+def train_and_extract_mealy(mealy_machine: MealyMachine, ex_name,
+                            lens=(2,8,10,12,15),
+                            num_train_samples=50000, load=False, formalism='mealy', extract_automaton = False):
     assert formalism in ['mealy', 'moore']
 
     input_al = mealy_machine.get_input_alphabet()
@@ -96,14 +99,18 @@ def train_and_extract_mealy(mealy_machine: MealyMachine, ex_name, lens=(1, 2, 3,
                                                        num_examples=num_train_samples, lens=lens)
     x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8)
 
-    rnn = RNNClassifier(input_al, num_layers=4, input_dim=len(input_al), hidden_dim=50, x_train=x_train,
-                        y_train=y_train, x_test=x_test, y_test=y_test, batch_size=18, nn_type="GRU")
+    rnn = RNNClassifier(input_al, num_layers=4, hidden_dim=50, x_train=x_train,
+                        y_train=y_train, x_test=x_test, y_test=y_test, batch_size=32, nn_type="GRU")
 
     if not load:
-        rnn.train(stop_acc=1.0, stop_epochs=3)
+        rnn.train(epochs=100, stop_acc=1.0, stop_epochs=3)
         rnn.save(f'RNN_Models/{ex_name}.rnn')
     else:
         rnn.load(f'RNN_Models/{ex_name}.rnn')
+
+    if not extract_automaton:
+
+        return None
 
     output_al = {output for state in mealy_machine.states for output in state.output_fun.values()}
     outputs_2_ints = {integer: output for output, integer in tokenized_dict(output_al).items()}
@@ -122,5 +129,15 @@ def train_and_extract_mealy(mealy_machine: MealyMachine, ex_name, lens=(1, 2, 3,
 
 
 if __name__ == '__main__':
-    coffee_machine = get_mqtt_mealy()
-    train_and_extract_mealy(coffee_machine, ex_name='mqtt', load=True)
+    # train_and_extract_tomita(tomita_grammar=3, load=False)
+
+    # learning based testing with coffee machine, RNN models saved to coffee_1, and coffee_2
+    # coffee_1 -> lens=(3,5,7,10,12), num_train_samples=50000
+    # coffee_2 -> lens=(2,8,10,12,15), num_train_samples=50000
+
+    train_and_extract_mealy(get_coffee_machine(), ex_name='coffee_2', lens=(1,3, 5, 10, 12,15), load=True, extract_automaton = True)
+
+    cex_set = learning_based_testing_against_correct_model('TrainingDataAndAutomata/Coffee_machine.dot', 'LearnedAutomata/learned_coffee_2.dot', cex_rounds=10)
+    print(cex_set)
+    training_x, training_y = training_data_from_cex_set(cex_set, 'TrainingDataAndAutomata/Coffee_machine.dot')
+    print(training_x, training_y)

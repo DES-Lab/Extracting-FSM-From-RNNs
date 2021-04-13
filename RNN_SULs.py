@@ -20,7 +20,7 @@ class RnnBinarySUL(SUL):
 
 
 class RnnMealySUL(SUL):
-    def __init__(self, nn, int_2_output_dict):
+    def __init__(self, nn, int_2_output_dict: dict):
         super().__init__()
         self.rnn = nn
         self.seq = []

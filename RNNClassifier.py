@@ -5,11 +5,12 @@ nn_type_options = ["LSTM", "GRU"]
 
 
 class RNNClassifier:
-    def __init__(self, alphabet, num_layers, input_dim, hidden_dim, x_train, y_train, x_test=None, y_test=None,
+    def __init__(self, alphabet, num_layers, hidden_dim, x_train, y_train, x_test=None, y_test=None,
                  batch_size=32, nn_type="LSTM"):
         assert nn_type in nn_type_options
         self.vocab_size = len(alphabet) + 1
-        num_of_classes = len(set(y_train))
+        input_dim = self.vocab_size
+        num_of_classes = len(set(y_train)) if not y_test else len(set(y_test).union(set(y_train)))
 
         self.state = None
 
@@ -17,8 +18,8 @@ class RNNClassifier:
         self.token_dict = dict((c, i) for i, c in enumerate(alphabet))
 
         self.pc = dy.ParameterCollection()
-        self.input_lookup = self.pc.add_lookup_parameters((self.vocab_size, input_dim))
-        self.W = self.pc.add_parameters((num_of_classes, hidden_dim))
+        self.input_lookup = self.pc.add_lookup_parameters((self.vocab_size, input_dim))  # TODO DOUBLE-CHECK
+        self.W = self.pc.add_parameters((input_dim, hidden_dim))  # TODO DOUBLE-CHECK
         nn_fun = dy.LSTMBuilder if nn_type == "LSTM" else dy.GRUBuilder
         self.rnn = nn_fun(num_layers, input_dim, hidden_dim, self.pc)
 
@@ -63,7 +64,7 @@ class RNNClassifier:
         return w * output_vec
 
     # either define stop loss, or stop acc and for how many epochs acc must not fall lower than it
-    def train(self, epochs=10000, stop_acc=0.99, stop_epochs=3, stop_loss=0.0005, verbose=True):
+    def train(self, epochs=10000, stop_acc=0.99, stop_epochs=3, stop_loss=0.0005, max_epochs=1000, verbose=True):
         assert 0 < stop_acc <= 1
         print('Starting train')
         trainer = dy.AdamTrainer(self.pc)

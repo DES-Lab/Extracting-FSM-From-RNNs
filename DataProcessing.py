@@ -30,14 +30,15 @@ def split_train_validation(x_values, y_values, ratio=0.8):
     x_train, y_train, x_test, y_test = None, None, None, None
     target_cat = 0
     # both train and test should have all labels
-    while target_cat != num_cat * 2:
+    while True:
         c = list(zip(x_values, y_values))
         shuffle(c)
         x_values, y_values = zip(*c)
         cutoff = int((len(x_values) + 1) * ratio)
         x_train, x_test = x_values[:cutoff], x_values[cutoff:]
         y_train, y_test = y_values[:cutoff], y_values[cutoff:]
-        target_cat = len(set(y_test)) + len(set(y_train))
+        if len(set(y_train)) == num_cat:  # and len(set(y_test)) == num_cat:
+            break
 
     return x_train, y_train, x_test, y_test
 
@@ -47,25 +48,31 @@ def tokenized_dict(alphabet):
 
 
 def seq_to_tokens(word, lookup_dict: dict):
-    return [lookup_dict[letter] for letter in word] if isinstance(word, list) else lookup_dict[word] if word else []
+    return [lookup_dict[letter] for letter in word] if isinstance(word, (list, tuple)) else lookup_dict[word] if word else []
 
 
 def get_mqtt_mealy():
-    return load_automaton_from_file('TrainingDataAndModels/MQTT.dot', automaton_type='mealy')
+    return load_automaton_from_file('TrainingDataAndAutomata/MQTT.dot', automaton_type='mealy')
 
 
 def get_coffee_machine():
-    return load_automaton_from_file('TrainingDataAndModels/Coffee_machine.dot', automaton_type='mealy')
+    return load_automaton_from_file('TrainingDataAndAutomata/Coffee_machine.dot', automaton_type='mealy')
 
 
 def generate_data_from_mealy(mealy_machine, input_al, num_examples, lens=(1, 2, 4, 6, 10, 15, 20)):
     output_al = {output for state in mealy_machine.states for output in state.output_fun.values()}
     ex_per_len = (num_examples // len(lens)) + 1
 
+    sum_lens = sum(lens)
+    # key is length, value is number of examples for said length
+    ex_per_len = {}
+    for l in lens:
+        ex_per_len[l] = int(num_examples * (l / sum_lens)) + 1
+
     train_seq = []
     train_labels = []
-    for l in lens:
-        for _ in range(ex_per_len):
+    for l in ex_per_len.keys():
+        for _ in range(ex_per_len[l]):
             seq = [choice(input_al) for _ in range(l)]
 
             mealy_machine.reset_to_initial()
@@ -82,5 +89,9 @@ def generate_data_from_mealy(mealy_machine, input_al, num_examples, lens=(1, 2, 
 
     train_seq = [seq_to_tokens(word, input_dict) for word in train_seq]
     train_labels = [seq_to_tokens(word, out_dict) for word in train_labels]
-
     return train_seq, train_labels
+
+
+def tokenize(seq, alphabet):
+    dictionary = tokenized_dict(alphabet)
+    return [seq_to_tokens(word, dictionary) for word in seq]

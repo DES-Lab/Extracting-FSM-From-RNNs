@@ -1,0 +1,34 @@
+digraph "LearnedAutomata/learned_coffee_machine" {
+s0 [label=s0];
+s1 [label=s1];
+s2 [label=s2];
+s3 [label=s3];
+s4 [label=s4];
+s5 [label=s5];
+s0 -> s0  [label="clean/check"];
+s0 -> s2  [label="pod/check"];
+s0 -> s5  [label="water/check"];
+s0 -> s1  [label="button/star"];
+s1 -> s1  [label="clean/star"];
+s1 -> s1  [label="pod/star"];
+s1 -> s1  [label="water/star"];
+s1 -> s1  [label="button/star"];
+s2 -> s0  [label="clean/check"];
+s2 -> s2  [label="pod/check"];
+s2 -> s3  [label="water/check"];
+s2 -> s1  [label="button/star"];
+s3 -> s0  [label="clean/check"];
+s3 -> s3  [label="pod/check"];
+s3 -> s3  [label="water/check"];
+s3 -> s4  [label="button/coffee"];
+s4 -> s0  [label="clean/check"];
+s4 -> s1  [label="pod/coffee"];
+s4 -> s1  [label="water/coffee"];
+s4 -> s1  [label="button/coffee"];
+s5 -> s0  [label="clean/check"];
+s5 -> s3  [label="pod/check"];
+s5 -> s5  [label="water/check"];
+s5 -> s1  [label="button/star"];
+__start0 [label="", shape=none];
+__start0 -> s0  [label=""];
+}

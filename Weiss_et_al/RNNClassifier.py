@@ -138,8 +138,8 @@ class RNNClassifier:
         #     self.show_all_losses()
         return self.finish_signal if loss_values[-1] < stop_threshold else self.keep_going
 
-    def save(self, path="rnn.model"):
-        self.pc.save(path)
+    def save(self, path):
+        self.pc.save(f'RNN_Models/Weiss_Framework_{path}.rnn')
 
-    def load(self, path="rnn.model"):
+    def load(self, path):
         self.pc.populate(path)
