@@ -25,7 +25,7 @@ def preprocess_binary_classification_data(x, y, alphabet):
     return x_train, y_train, x_test, y_test
 
 
-def split_train_validation(x_values, y_values, ratio=0.8):
+def split_train_validation(x_values, y_values, ratio=0.8, uniform = False):
     num_cat = len(set(y_values))
     x_train, y_train, x_test, y_test = None, None, None, None
     target_cat = 0
@@ -37,7 +37,9 @@ def split_train_validation(x_values, y_values, ratio=0.8):
         cutoff = int((len(x_values) + 1) * ratio)
         x_train, x_test = x_values[:cutoff], x_values[cutoff:]
         y_train, y_test = y_values[:cutoff], y_values[cutoff:]
-        if len(set(y_train)) == num_cat:  # and len(set(y_test)) == num_cat:
+        if not uniform and len(set(y_train)) == num_cat:  # and len(set(y_test)) == num_cat:
+            break
+        elif len(set(y_train)) == num_cat and len(set(y_test)) == num_cat:
             break
 
     return x_train, y_train, x_test, y_test

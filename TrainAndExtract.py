@@ -109,7 +109,6 @@ def train_and_extract_mealy(mealy_machine: MealyMachine, ex_name,
         rnn.load(f'RNN_Models/{ex_name}.rnn')
 
     if not extract_automaton:
-
         return None
 
     output_al = {output for state in mealy_machine.states for output in state.output_fun.values()}
