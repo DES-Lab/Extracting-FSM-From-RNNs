@@ -55,19 +55,23 @@ def seq_to_tokens(word, lookup_dict: dict):
 
 
 def get_mqtt_mealy():
-    return load_automaton_from_file('TrainingDataAndAutomata/MQTT.dot', automaton_type='mealy')
+    return load_automaton_from_file('TrainingDataAndAutomata/MQTT.dot', automaton_type='mealy',
+                                    compute_prefixes=True)
 
 
 def get_coffee_machine():
-    return load_automaton_from_file('TrainingDataAndAutomata/Coffee_machine.dot', automaton_type='mealy')
+    return load_automaton_from_file('TrainingDataAndAutomata/Coffee_machine.dot', automaton_type='mealy',
+                                    compute_prefixes=True)
 
 
 def get_tcp():
-    return load_automaton_from_file('TrainingDataAndAutomata/TCP_Linux_Client.dot', automaton_type='mealy')
+    return load_automaton_from_file('TrainingDataAndAutomata/TCP_Linux_Client.dot', automaton_type='mealy',
+                                    compute_prefixes=True)
 
 
 def get_ssh():
-    return load_automaton_from_file('TrainingDataAndAutomata/OpenSSH.dot', automaton_type='mealy')
+    return load_automaton_from_file('TrainingDataAndAutomata/OpenSSH.dot', automaton_type='mealy',
+                                    compute_prefixes=True)
 
 
 def generate_data_from_mealy(mealy_machine, input_al, num_examples, lens=(1, 2, 4, 6, 10, 15, 20)):
@@ -126,6 +130,16 @@ def generate_data_based_on_characterization_set(automaton, automaton_type='mealy
     prefixes = [state.prefix for state in automaton.states]
 
     sequences = [p + e for e in characterization_set for p in prefixes]
+
+    sequences.extend([p + tuple([i]) + e for p in prefixes for i in automaton.get_input_alphabet()
+                      for e in characterization_set])
+    #sequences.extend([p + e for p in sequences for e in characterization_set])
+    for _ in range(1):
+        sequences.extend([p + tuple([i]) + e for p in sequences for i in automaton.get_input_alphabet()
+                          for e in characterization_set])
+    for _ in range(3):
+        sequences.extend(sequences)
+
     labels = [sul.query(s)[-1] for s in sequences]
 
     sequences = [list(s) for s in sequences]

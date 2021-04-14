@@ -45,7 +45,6 @@ class RNN_BinarySUL_for_Weiss_Framework(SUL):
 
     def query(self, input_word: tuple) -> list:
         self.pre()
-        out = []
         # Empty string for DFA
         if len(input_word) == 0:
             return self.step(None)

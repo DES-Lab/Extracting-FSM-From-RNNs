@@ -49,7 +49,7 @@ def training_data_from_cex_set(cex_set, path_2_correct_hyp, automaton_type='meal
 
 def train_extract_retrain(path_mealy_machine, ex_name,
                           lens=(2, 8, 10, 12, 15),
-                          num_train_samples=50000, load=False, formalism='mealy'):
+                          num_train_samples=5000, load=False, formalism='mealy'):
     assert formalism in ['mealy', 'moore']
 
     mealy_machine = load_automaton_from_file(path_mealy_machine, automaton_type='mealy')
@@ -129,30 +129,34 @@ def train_extract_retrain(path_mealy_machine, ex_name,
 
 
 def lbt_of_2_same_trainings():
-    mm, exp = get_mqtt_mealy(), 'mqtt'
     mm, exp = get_coffee_machine(), 'coffee'
+    mm, exp = get_mqtt_mealy(), 'mqtt'
 
     input_al = mm.get_input_alphabet()
     output_al = {output for state in mm.states for output in state.output_fun.values()}
 
     rnn_1 = train_RNN_on_mealy_machine(mm, ex_name=f'{exp}_1', num_train_samples=10000, lens=(5, 8, 10))
-    rnn_2 = train_RNN_on_mealy_machine(mm, ex_name=f'{exp}_2', num_train_samples=5000, lens=(1, 3, 5, 8))
+    rnn_2 = train_RNN_on_mealy_machine(mm, ex_name=f'{exp}_2', num_train_samples=15000, lens=(1, 3, 5, 8, 10))
 
-    learned_automaton_1 = extract_mealy_machine(rnn_1, input_al, output_al, max_learning_rounds=50)
-    learned_automaton_2 = extract_mealy_machine(rnn_2, input_al, output_al, max_learning_rounds=50)
+    learned_automaton_1 = extract_mealy_machine(rnn_1, input_al, output_al, max_learning_rounds=25)
+    learned_automaton_2 = extract_mealy_machine(rnn_2, input_al, output_al, max_learning_rounds=25)
 
     sul = MealySUL(learned_automaton_1)
+    sul2 = MealySUL(learned_automaton_2)
 
-    eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=100, walk_len=20)
     eq_oracle = LongCexEqOracle(input_al, sul, num_walks=500, min_walk_len=1, max_walk_len=30,
                                 reset_after_cex=True)
+    eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=100, walk_len=20)
 
     cex_set = set()
     for i in range(200):
         cex = eq_oracle.find_cex(learned_automaton_2)
         if cex:
             if tuple(cex) not in cex_set:
+                print('--------------------------------------------------------------------------')
                 print('Cex Found: ', cex)
+                print('Model 1  : ', sul.query(cex))
+                print('Model 2  : ', sul2.query(cex))
             cex_set.add(tuple(cex))
 
     return cex_set

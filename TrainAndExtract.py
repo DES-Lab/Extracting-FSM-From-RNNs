@@ -1,8 +1,9 @@
 import string
 
+from aalpy.SULs import MealySUL
 from aalpy.automata import MealyMachine
 from aalpy.learning_algs import run_Lstar
-from aalpy.oracles import StatePrefixEqOracle, TransitionFocusOracle
+from aalpy.oracles import StatePrefixEqOracle, TransitionFocusOracle, RandomWalkEqOracle, RandomWordEqOracle
 from aalpy.utils import save_automaton_to_file, visualize_automaton, load_automaton_from_file
 
 from DataProcessing import parse_data, preprocess_binary_classification_data, generate_data_from_mealy, \
@@ -87,7 +88,7 @@ def train_and_extract_bp(path="TrainingDataAndAutomata/balanced()_1.txt", load=F
     return dfa
 
 
-def train_RNN_on_mealy_machine(mealy_machine: MealyMachine, ex_name, num_hidden_dim=2, hidden_dim_size=40,
+def train_RNN_on_mealy_machine(mealy_machine: MealyMachine, ex_name, num_hidden_dim=2, hidden_dim_size=50,
                                nn_type='GRU',
                                batch_size=32, lens=(2, 8, 10, 12, 15), stopping_acc=1.0, num_train_samples=15000,
                                load=False):
@@ -102,7 +103,7 @@ def train_RNN_on_mealy_machine(mealy_machine: MealyMachine, ex_name, num_hidden_
     x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8, uniform=True)
 
     # train_seq, train_labels = generate_data_based_on_characterization_set(mealy_machine)
-    # x_train, y_train, x_test, y_test = train_seq, train_labels, None, None
+    # x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8, uniform=True)
 
     rnn = RNNClassifier(input_al, output_dim=len(output_al), num_layers=num_hidden_dim, hidden_dim=hidden_dim_size,
                         x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test,
@@ -147,8 +148,8 @@ def learn_and_extract_mealy(ex_name):
 
     learned_automaton = extract_mealy_machine(rnn, input_al, output_al)
 
-    save_automaton_to_file(learned_automaton, f'LearnedAutomata/learned_{ex_name}')
-    visualize_automaton(learned_automaton)
+    #save_automaton_to_file(learned_automaton, f'LearnedAutomata/learned_{ex_name}')
+    #visualize_automaton(learned_automaton)
     return learned_automaton
 
 
@@ -159,7 +160,20 @@ if __name__ == '__main__':
     # coffee_1 -> lens=(3,5,7,10,12), num_train_samples=50000
     # coffee_2 -> lens=(2,8,10,12,15), num_train_samples=50000
 
-    learn_and_extract_mealy('mqtt')
+    learned_automaton = learn_and_extract_mealy('mqtt')
+    correct = get_mqtt_mealy()
+    input_al = correct.get_input_alphabet()
+    sul = MealySUL(learned_automaton)
+    correct_sul = MealySUL(correct)
+    eq_oracle = StatePrefixEqOracle(input_al, sul)
+
+    for _ in range(10):
+        cex = eq_oracle.find_cex(correct)
+        if cex:
+            print("------------------------------------------------")
+            print(cex)
+            print('Correct : ', correct_sul.query(cex))
+            print('Learned : ', sul.query(cex))
 
     # cex_set = learning_based_testing_against_correct_model('TrainingDataAndAutomata/Coffee_machine.dot', 'LearnedAutomata/learned_coffee_2.dot', cex_rounds=10)
     # print(cex_set)
