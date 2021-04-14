@@ -62,6 +62,14 @@ def get_coffee_machine():
     return load_automaton_from_file('TrainingDataAndAutomata/Coffee_machine.dot', automaton_type='mealy')
 
 
+def get_tcp():
+    return load_automaton_from_file('TrainingDataAndAutomata/TCP_Linux_Client.dot', automaton_type='mealy')
+
+
+def get_ssh():
+    return load_automaton_from_file('TrainingDataAndAutomata/OpenSSH.dot', automaton_type='mealy')
+
+
 def generate_data_from_mealy(mealy_machine, input_al, num_examples, lens=(1, 2, 4, 6, 10, 15, 20)):
     output_al = {output for state in mealy_machine.states for output in state.output_fun.values()}
     ex_per_len = (num_examples // len(lens)) + 1
@@ -105,21 +113,19 @@ def generate_data_based_on_characterization_set(automaton, automaton_type='mealy
     from aalpy.oracles import RandomWalkEqOracle
     from aalpy.learning_algs import run_Lstar
 
-    #automaton = load_automaton_from_file(path_to_automaton, automaton_type)
+    # automaton = load_automaton_from_file(path_to_automaton, automaton_type)
     alphabet = automaton.get_input_alphabet()
     eq_oracle = RandomWalkEqOracle(alphabet, automaton, num_steps=5000, reset_prob=0.09, reset_after_cex=True)
 
     sul = DfaSUL(automaton) if automaton_type == 'dfa' else MealySUL(automaton)
 
     automaton, data = run_Lstar(alphabet, sul, eq_oracle, automaton_type=automaton_type,
-                                print_level=0, return_data=True, suffix_closedness=False)
+                                print_level=0, return_data=True, suffix_closedness=True)
 
     characterization_set = data['characterization set']
-
     prefixes = [state.prefix for state in automaton.states]
 
     sequences = [p + e for e in characterization_set for p in prefixes]
-
     labels = [sul.query(s)[-1] for s in sequences]
 
     sequences = [list(s) for s in sequences]

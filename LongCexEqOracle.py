@@ -31,7 +31,6 @@ class LongCexEqOracle(Oracle):
     def find_cex(self, hypothesis):
 
         while self.num_walks_done < self.num_walks:
-            inputs = []
             self.sul.post()
             self.sul.pre()
             hypothesis.reset_to_initial()
@@ -41,11 +40,11 @@ class LongCexEqOracle(Oracle):
 
             num_steps = randint(self.min_walk_len, self.max_walk_len)
 
-            for _ in range(num_steps):
-                inputs.append(choice(self.alphabet))
+            inputs = [choice(self.alphabet) for _ in range(num_steps)]
 
-                out_sul = self.sul.step(inputs[-1])
-                out_hyp = hypothesis.step(inputs[-1])
+            for i in inputs:
+                out_sul = self.sul.step(i)
+                out_hyp = hypothesis.step(i)
                 self.num_steps += 1
 
                 if out_sul != out_hyp:

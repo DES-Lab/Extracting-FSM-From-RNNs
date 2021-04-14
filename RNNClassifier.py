@@ -8,11 +8,12 @@ nn_type_options = ["LSTM", "GRU"]
 
 
 class RNNClassifier:
-    def __init__(self, alphabet, num_layers, hidden_dim, x_train, y_train, x_test=None, y_test=None,
+    def __init__(self, alphabet, num_layers, output_dim, hidden_dim, x_train, y_train, x_test=None, y_test=None,
                  batch_size=32, nn_type="LSTM"):
         assert nn_type in nn_type_options
         self.vocab_size = len(alphabet) + 1
         input_dim = self.vocab_size - 1
+        output_dim = output_dim
         num_of_classes = len(set(y_train)) if not y_test else len(set(y_test).union(set(y_train)))
 
         self.state = None
@@ -22,7 +23,7 @@ class RNNClassifier:
 
         self.pc = dy.ParameterCollection()
         self.input_lookup = self.pc.add_lookup_parameters((self.vocab_size, input_dim))  # TODO DOUBLE-CHECK
-        self.W = self.pc.add_parameters((num_of_classes, hidden_dim))  # TODO DOUBLE-CHECK
+        self.W = self.pc.add_parameters((output_dim, hidden_dim))  # TODO DOUBLE-CHECK
         nn_fun = dy.LSTMBuilder if nn_type == "LSTM" else dy.GRUBuilder
         self.rnn = nn_fun(num_layers, input_dim, hidden_dim, self.pc)
 
