@@ -8,7 +8,7 @@ from DataProcessing import generate_data_from_mealy, split_train_validation, tok
 from LongCexEqOracle import LongCexEqOracle
 from RNNClassifier import RNNClassifier
 from RNN_SULs import RnnMealySUL
-from TrainAndExtract import train_RNN_on_mealy_machine, extract_mealy_machine
+from TrainAndExtract import train_RNN_on_mealy_machine, extract_mealy_machine, train_RNN_on_mealy_data
 
 
 def learning_based_testing_against_correct_model(model_correct_path, model_learned_path, cex_rounds=10,
@@ -135,8 +135,13 @@ def lbt_of_2_same_trainings():
     input_al = mm.get_input_alphabet()
     output_al = {output for state in mm.states for output in state.output_fun.values()}
 
-    rnn_1 = train_RNN_on_mealy_machine(mm, ex_name=f'{exp}_1', num_train_samples=10000, lens=(5, 8, 10))
-    rnn_2 = train_RNN_on_mealy_machine(mm, ex_name=f'{exp}_2', num_train_samples=15000, lens=(1, 3, 5, 8, 10))
+    train_seq, train_labels = generate_data_from_mealy(mm, input_al,
+                                                       num_examples=10000, lens=(2,5,8,10))
+
+    training_data = (train_seq, train_labels)
+
+    rnn_1 = train_RNN_on_mealy_data(mm, data=training_data, ex_name=f'{exp}_1')
+    rnn_2 = train_RNN_on_mealy_data(mm, data=training_data, ex_name=f'{exp}_2')
 
     learned_automaton_1 = extract_mealy_machine(rnn_1, input_al, output_al, max_learning_rounds=25)
     learned_automaton_2 = extract_mealy_machine(rnn_2, input_al, output_al, max_learning_rounds=25)
@@ -154,12 +159,73 @@ def lbt_of_2_same_trainings():
         if cex:
             if tuple(cex) not in cex_set:
                 print('--------------------------------------------------------------------------')
-                print('Cex Found: ', cex)
+                print('Case of Non-Conformance between Automata: ', cex)
                 print('Model 1  : ', sul.query(cex))
                 print('Model 2  : ', sul2.query(cex))
             cex_set.add(tuple(cex))
 
     return cex_set
+
+def retraining_based_on_non_conformance():
+    mm, exp, path_2_correct = get_coffee_machine(), 'coffee', 'TrainingDataAndAutomata/Coffee_machine.dot'
+    mm, exp, path_2_correct = get_mqtt_mealy(), 'mqtt', 'TrainingDataAndAutomata/MQTT.dot'
+
+    input_al = mm.get_input_alphabet()
+    output_al = {output for state in mm.states for output in state.output_fun.values()}
+
+    num_training_samples = 5000
+    samples_lens = (3,6,9,12)
+
+    train_seq, train_labels = generate_data_from_mealy(mm, input_al,
+                                                       num_examples=num_training_samples, lens=samples_lens)
+
+    number_of_rnns = 3
+    assert number_of_rnns >= 2
+
+    while True:
+        trained_networks = []
+
+        x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8, uniform=True)
+
+        for _ in range(number_of_rnns):
+            rnn = RNNClassifier(input_al, output_dim=len(output_al), num_layers=2, hidden_dim=40,
+                                x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test,
+                                batch_size=32, nn_type='GRU')
+            rnn.train(epochs=50, stop_acc=1.0, stop_epochs=3)
+            trained_networks.append(rnn)
+
+        learned_automatons = []
+        for rnn in trained_networks:
+            learned_automaton = extract_mealy_machine(rnn, input_al, output_al, max_learning_rounds=25)
+            learned_automatons.append(learned_automaton)
+
+        learned_automatons.sort(key=lambda x: len(x.states), reverse=True)
+        base_sul = MealySUL(learned_automatons[0])
+
+        eq_oracle = LongCexEqOracle(input_al, base_sul, num_walks=500, min_walk_len=1, max_walk_len=30,
+                                    reset_after_cex=True)
+        eq_oracle = StatePrefixEqOracle(input_al, base_sul, walks_per_state=100, walk_len=20)
+
+        cex_set = set()
+        for la in learned_automatons[1:]:
+            for i in range(200):
+                cex = eq_oracle.find_cex(la)
+                if cex:
+                    cex_set.add(tuple(cex))
+
+        if not cex_set:
+            break
+
+        new_x, new_y = training_data_from_cex_set(cex_set, path_2_correct)
+
+        print(f'Adding {len(cex_set)} new examples to training data.')
+        new_x = tokenize(new_x, input_al)
+        new_y = tokenize(new_y, output_al)
+
+        train_seq.extend(new_x)
+        train_labels.extend(new_y)
+        print(f'Size of training data: {len(train_seq)}')
+
 
 if __name__ == '__main__':
 

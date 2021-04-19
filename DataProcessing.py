@@ -1,3 +1,4 @@
+import random
 from random import choice, shuffle
 
 from aalpy.utils import load_automaton_from_file
@@ -107,6 +108,95 @@ def generate_data_from_mealy(mealy_machine, input_al, num_examples, lens=(1, 2, 
     return train_seq, train_labels
 
 
+def generate_concrete_data_MQTT(num_examples, num_rand_topics=5, lens=(1, 2, 4, 6, 10), uniform_concretion=False):
+    mealy_machine = load_automaton_from_file('TrainingDataAndAutomata/MQTT.dot', automaton_type='mealy')
+    input_al = mealy_machine.get_input_alphabet()
+
+    sum_lens = sum(lens)
+
+    if uniform_concretion:
+        num_examples = num_examples // num_rand_topics
+
+    # key is length, value is number of examples for said length
+    ex_per_len = {}
+    for l in lens:
+        # if l == 1 or l == 2:
+        #     ex_per_len[l] = pow(len(input_al), l + 2)
+        #     sum_lens -= l
+        #     continue
+
+        ex_per_len[l] = int(num_examples * (l / sum_lens)) + 1
+
+    abstract_train_seq = []
+    train_labels = []
+
+    for l in ex_per_len.keys():
+        for i in range(ex_per_len[l]):
+            seq = [choice(input_al) for _ in range(l)]
+            if i == 0 and l != 1 and random.random() >= 0.15:
+                seq[0] = 'connect'
+
+            mealy_machine.reset_to_initial()
+            out = None
+            for inp in seq:
+                out = mealy_machine.step(inp)
+
+            abstract_train_seq.append(seq)
+            train_labels.append(out)
+
+    random_topics = [gen_random_str() for _ in range(num_rand_topics)]
+    concrete_train_seq = []
+    concrete_input_set = set()
+    concrete_labels = []
+
+    for ind, seq in enumerate(abstract_train_seq):
+
+        topics = [choice(random_topics)] if not uniform_concretion else random_topics
+        for t in topics:
+
+            topic = t
+            concrete_seq = []
+
+            for abstract_input in seq:
+                if abstract_input == 'connect':
+                    concrete_seq.append('connect_Client1_ping=False')
+                elif abstract_input == 'disconnect':
+                    concrete_seq.append(f'disconnect_Client1_var')
+                elif abstract_input == 'subscribe':
+                    concrete_seq.append(f'subscribe_Client1_topic="{topic}"_retain=False')
+                elif abstract_input == 'unsubscribe':
+                    concrete_seq.append(f'unsubscribe_Client1_topic="{topic}"')
+                elif abstract_input == 'publish':
+                    concrete_seq.append(f'publish_Client1_global_topic="{topic}"')
+                elif abstract_input == 'invalid':
+                    concrete_seq.append(f'invalid=Client1_opt=NULL')
+                else:
+                    assert False
+
+            if train_labels[ind] == 'CONNACK' or train_labels[ind] == 'CONCLOSED':
+                concrete_labels.append(train_labels[ind] + f'_User1')
+            else:
+                concrete_labels.append(train_labels[ind] + f'_User1_topic:{topic}')
+
+            #concrete_labels.append(train_labels[ind])
+
+            concrete_train_seq.append(concrete_seq)
+
+            concrete_input_set.update(concrete_seq)
+
+    concrete_input_set = list(concrete_input_set)
+    output_al = list(set(concrete_labels))
+
+    # map to integers
+    input_dict = tokenized_dict(concrete_input_set)
+    out_dict = tokenized_dict(output_al)
+
+    train_seq = [seq_to_tokens(word, input_dict) for word in concrete_train_seq]
+    train_labels = [seq_to_tokens(word, out_dict) for word in concrete_labels]
+
+    return train_seq, train_labels, concrete_input_set, output_al
+
+
 def tokenize(seq, alphabet):
     dictionary = tokenized_dict(alphabet)
     return [seq_to_tokens(word, dictionary) for word in seq]
@@ -133,7 +223,7 @@ def generate_data_based_on_characterization_set(automaton, automaton_type='mealy
 
     sequences.extend([p + tuple([i]) + e for p in prefixes for i in automaton.get_input_alphabet()
                       for e in characterization_set])
-    #sequences.extend([p + e for p in sequences for e in characterization_set])
+    # sequences.extend([p + e for p in sequences for e in characterization_set])
     for _ in range(1):
         sequences.extend([p + tuple([i]) + e for p in sequences for i in automaton.get_input_alphabet()
                           for e in characterization_set])
@@ -154,3 +244,12 @@ def generate_data_based_on_characterization_set(automaton, automaton_type='mealy
     train_labels = [seq_to_tokens(word, out_dict) for word in labels]
 
     return train_seq, train_labels
+
+
+def gen_random_str():
+    from random import choice, randint
+    import string
+
+    str_len = randint(2, 10)
+    letters = string.ascii_lowercase
+    return ''.join(choice(letters) for i in range(10))

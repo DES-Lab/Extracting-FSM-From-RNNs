@@ -118,14 +118,41 @@ def train_RNN_on_mealy_machine(mealy_machine: MealyMachine, ex_name, num_hidden_
     return rnn
 
 
-def extract_mealy_machine(rnn, input_al, output_al, max_learning_rounds=10,formalism='mealy'):
+def train_RNN_on_mealy_data(mealy_machine, data, ex_name, num_hidden_dim=2, hidden_dim_size=50,
+                            nn_type='GRU', batch_size=32, stopping_acc=1.0, load=False):
+    assert nn_type in ['GRU', 'LSTM']
+
+    input_al = mealy_machine.get_input_alphabet()
+    output_al = {output for state in mealy_machine.states for output in state.output_fun.values()}
+
+    train_seq, train_labels = data[0], data[1]
+
+    x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8, uniform=True)
+
+    # train_seq, train_labels = generate_data_based_on_characterization_set(mealy_machine)
+    # x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8, uniform=True)
+
+    rnn = RNNClassifier(input_al, output_dim=len(output_al), num_layers=num_hidden_dim, hidden_dim=hidden_dim_size,
+                        x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test,
+                        batch_size=batch_size, nn_type=nn_type)
+
+    if not load:
+        rnn.train(epochs=150, stop_acc=stopping_acc, stop_epochs=3)
+        rnn.save(f'RNN_Models/{ex_name}.rnn')
+    else:
+        rnn.load(f'RNN_Models/{ex_name}.rnn')
+
+    return rnn
+
+
+def extract_mealy_machine(rnn, input_al, output_al, max_learning_rounds=10, formalism='mealy'):
     assert formalism in ['mealy', 'moore']
 
     outputs_2_ints = {integer: output for output, integer in tokenized_dict(output_al).items()}
 
     sul = RnnMealySUL(rnn, outputs_2_ints)
 
-    eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=100, walk_len=20)
+    eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=150, walk_len=25)
 
     print('Starting extraction of automaton')
 
@@ -148,8 +175,8 @@ def learn_and_extract_mealy(ex_name):
 
     learned_automaton = extract_mealy_machine(rnn, input_al, output_al)
 
-    #save_automaton_to_file(learned_automaton, f'LearnedAutomata/learned_{ex_name}')
-    #visualize_automaton(learned_automaton)
+    # save_automaton_to_file(learned_automaton, f'LearnedAutomata/learned_{ex_name}')
+    # visualize_automaton(learned_automaton)
     return learned_automaton
 
 

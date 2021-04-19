@@ -1,3 +1,6 @@
+from collections import defaultdict
+from random import choice
+
 from aalpy.base import SUL
 
 
@@ -66,3 +69,65 @@ class RNN_BinarySUL_for_Weiss_Framework(SUL):
     def predict(self, seq):
         prediction = self.rnn.classify_word(seq)
         return prediction
+
+
+class AbstractMQTT_RNN_SUL(SUL):
+    def __init__(self, nn, concrete_input_al, concrete_output_al):
+        super().__init__()
+        self.rnn = nn
+        self.seq = []
+
+        self.abstract_inputs = ['connect', 'disconnect', 'subscribe', 'unsubscribe', 'publish', 'invalid']
+        self.abstract_outputs = ['CONNACK', 'CONCLOSED', 'SUBACK', 'UNSUBACK', 'PUBACK__PUBLISH', 'PUBACK']
+
+        self.concrete_inputs = concrete_input_al
+        self.concrete_inputs.sort()
+
+        self.concrete_outputs = concrete_output_al
+
+        self.abstract_2_concrete_inputs_map = defaultdict(list)
+
+        self.int_2_output_dict = {i: o for i, o in enumerate(concrete_output_al)}
+
+        self.create_abstract_alphabets()
+
+    def create_abstract_alphabets(self):
+        for i in self.concrete_inputs:
+            for ai in self.abstract_inputs:
+                if i.startswith(ai):
+                    self.abstract_2_concrete_inputs_map[ai].append(i)
+                    break
+
+        # 2 ways of doing things
+
+    def pre(self):
+        self.rnn.state = self.rnn.rnn.initial_state()
+
+    def post(self):
+        self.rnn.renew()
+
+    def step(self, letter):
+        concrete_input = choice(self.abstract_2_concrete_inputs_map[letter])  # TODO this could lead to non-det
+
+        # concrete_input = self.abstract_2_concrete_inputs_map[letter][0]
+        # print(concrete_input)
+        self.seq.append(concrete_input)
+        out = self.rnn.step(concrete_input)
+
+        concrete_out = self.int_2_output_dict[out]
+
+        abstract_output = None
+        for ao in self.abstract_outputs:
+            if concrete_out.startswith(ao):
+                abstract_output = ao
+                break
+        assert abstract_output
+
+        # print('============================================')
+        # print(self.seq)
+        # print(letter)
+        # print(concrete_input)
+        # print(concrete_out)
+        # print(abstract_output)
+
+        return abstract_output
