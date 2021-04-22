@@ -70,7 +70,8 @@ class RNNClassifier:
     # either define stop loss, or stop acc and for how many epochs acc must not fall lower than it
     def train(self, epochs=10000, stop_acc=0.99, stop_epochs=3, stop_loss=0.0005, verbose=True):
         assert 0 < stop_acc <= 1.1
-        print('Starting train')
+        if verbose:
+            print('Starting train')
         trainer = dy.AdamTrainer(self.pc)
         avg_loss = []
         num_epos_above_threshold = 0
@@ -100,7 +101,8 @@ class RNNClassifier:
 
             if stop_loss >= avg_loss[-1] > 0:
                 break
-        print('Done training!')
+        if verbose:
+            print('Done training!')
 
     def validate(self):
         acc_train, acc_test = [], []

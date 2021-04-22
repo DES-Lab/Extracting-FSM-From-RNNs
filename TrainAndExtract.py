@@ -145,7 +145,7 @@ def train_RNN_on_mealy_data(mealy_machine, data, ex_name, num_hidden_dim=2, hidd
     return rnn
 
 
-def extract_mealy_machine(rnn, input_al, output_al, max_learning_rounds=10, formalism='mealy'):
+def extract_mealy_machine(rnn, input_al, output_al, max_learning_rounds=10, formalism='mealy', print_level=2):
     assert formalism in ['mealy', 'moore']
 
     outputs_2_ints = {integer: output for output, integer in tokenized_dict(output_al).items()}
@@ -154,12 +154,12 @@ def extract_mealy_machine(rnn, input_al, output_al, max_learning_rounds=10, form
 
     eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=150, walk_len=25)
 
-    print('Starting extraction of automaton')
+    #print('Starting extraction of automaton')
 
     # TODO Change automata learning setting if you want
     learned_automaton = run_Lstar(alphabet=input_al, sul=sul, eq_oracle=eq_oracle, automaton_type=formalism,
                                   cache_and_non_det_check=False, max_learning_rounds=max_learning_rounds,
-                                  suffix_closedness=False)
+                                  suffix_closedness=False, print_level=print_level)
 
     return learned_automaton
 
