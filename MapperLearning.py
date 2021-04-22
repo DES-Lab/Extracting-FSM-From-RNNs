@@ -7,8 +7,8 @@ from DataProcessing import generate_concrete_data_MQTT, split_train_validation
 from RNNClassifier import RNNClassifier
 from RNN_SULs import AbstractMQTT_RNN_SUL
 
-train_seq, train_labels, input_al, output_al = generate_concrete_data_MQTT(num_examples=200000, num_rand_topics=2,
-                                                                           lens=(1, 2, 3, 5, 8),
+train_seq, train_labels, input_al, output_al = generate_concrete_data_MQTT(num_examples=300000, num_rand_topics=2,
+                                                                           lens=(1, 2, 3, 5, 8, 10, 12),
                                                                            uniform_concretion=True)
 
 x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8, uniform=True)
@@ -41,6 +41,6 @@ abstract_inputs = sul.abstract_inputs
 
 eq_oracle = StatePrefixEqOracle(abstract_inputs, sul, walks_per_state=100, walk_len=20)
 
-model = run_Lstar(abstract_inputs, sul, eq_oracle, automaton_type='mealy', cache_and_non_det_check=True)
+model = run_Lstar(abstract_inputs, sul, eq_oracle, automaton_type='mealy', cache_and_non_det_check=True, suffix_closedness=False)
 
 visualize_automaton(model)
