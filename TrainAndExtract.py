@@ -6,7 +6,7 @@ from aalpy.learning_algs import run_Lstar
 from aalpy.oracles import StatePrefixEqOracle, TransitionFocusOracle, RandomWalkEqOracle, RandomWordEqOracle
 from aalpy.utils import save_automaton_to_file, visualize_automaton, load_automaton_from_file
 
-from DataProcessing import parse_data, preprocess_binary_classification_data, generate_data_from_mealy, \
+from DataProcessing import parse_data, preprocess_binary_classification_data, generate_data_from_automaton, \
     split_train_validation, tokenized_dict, get_coffee_machine, generate_data_based_on_characterization_set, \
     get_mqtt_mealy, get_ssh, get_tcp
 from RNNClassifier import RNNClassifier
@@ -97,8 +97,8 @@ def train_RNN_on_mealy_machine(mealy_machine: MealyMachine, ex_name, num_hidden_
     input_al = mealy_machine.get_input_alphabet()
     output_al = {output for state in mealy_machine.states for output in state.output_fun.values()}
 
-    train_seq, train_labels = generate_data_from_mealy(mealy_machine, input_al,
-                                                       num_examples=num_train_samples, lens=lens)
+    train_seq, train_labels = generate_data_from_automaton(mealy_machine, input_al,
+                                                           num_examples=num_train_samples, lens=lens)
 
     x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8, uniform=True)
 

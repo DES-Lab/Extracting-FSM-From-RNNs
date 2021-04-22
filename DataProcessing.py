@@ -1,6 +1,7 @@
 import random
 from random import choice, shuffle
 
+from aalpy.automata import MealyMachine
 from aalpy.utils import load_automaton_from_file
 
 
@@ -52,7 +53,7 @@ def tokenized_dict(alphabet):
 
 def seq_to_tokens(word, lookup_dict: dict):
     return [lookup_dict[letter] for letter in word] if isinstance(word, (list, tuple)) else lookup_dict[
-        word] if word else []
+        word] if word is not None else []
 
 
 def get_mqtt_mealy():
@@ -75,8 +76,16 @@ def get_ssh():
                                     compute_prefixes=True)
 
 
-def generate_data_from_mealy(mealy_machine, input_al, num_examples, lens=(1, 2, 4, 6, 10, 15, 20)):
-    output_al = {output for state in mealy_machine.states for output in state.output_fun.values()}
+def get_tomita(tomita_num):
+    return load_automaton_from_file(f'TrainingDataAndAutomata/tomita_{tomita_num}.dot', automaton_type='dfa',
+                                    compute_prefixes=True)
+
+
+def generate_data_from_automaton(mealy_machine, input_al, num_examples, lens=(1, 2, 4, 6, 10, 15, 20)):
+    if isinstance(mealy_machine, MealyMachine):
+        output_al = {output for state in mealy_machine.states for output in state.output_fun.values()}
+    else:
+        output_al = [False, True]
     ex_per_len = (num_examples // len(lens)) + 1
 
     sum_lens = sum(lens)
@@ -178,7 +187,7 @@ def generate_concrete_data_MQTT(num_examples, num_rand_topics=5, lens=(1, 2, 4, 
             else:
                 concrete_labels.append(train_labels[ind] + f'_User1_topic:{topic}')
 
-            #concrete_labels.append(train_labels[ind])
+            # concrete_labels.append(train_labels[ind])
 
             concrete_train_seq.append(concrete_seq)
 

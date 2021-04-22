@@ -1,9 +1,10 @@
 from aalpy.SULs import DfaSUL, MealySUL, MooreSUL
+from aalpy.automata import Dfa, MealyMachine
 from aalpy.oracles import StatePrefixEqOracle, RandomWalkEqOracle
-from aalpy.utils import load_automaton_from_file
+from aalpy.utils import load_automaton_from_file, save_automaton_to_file
 
-from DataProcessing import generate_data_from_mealy, split_train_validation, tokenize, \
-    get_coffee_machine, get_mqtt_mealy, tokenized_dict
+from DataProcessing import generate_data_from_automaton, split_train_validation, tokenize, \
+    get_coffee_machine, get_mqtt_mealy, tokenized_dict, get_tomita
 from LongCexEqOracle import LongCexEqOracle
 from RNNClassifier import RNNClassifier
 from RNN_SULs import RnnMealySUL
@@ -33,7 +34,6 @@ def learning_based_testing_against_correct_model(model_correct_path, model_learn
 
 
 def training_data_from_cex_set(ground_truth_model, cex_set):
-    from aalpy.automata import Dfa, MealyMachine
 
     sul = DfaSUL if isinstance(ground_truth_model, Dfa) else \
         MealySUL if isinstance(ground_truth_model, MealyMachine) else MooreSUL
@@ -55,8 +55,8 @@ def lbt_of_2_same_trainings():
     input_al = mm.get_input_alphabet()
     output_al = {output for state in mm.states for output in state.output_fun.values()}
 
-    train_seq, train_labels = generate_data_from_mealy(mm, input_al,
-                                                       num_examples=10000, lens=(2, 5, 8, 10))
+    train_seq, train_labels = generate_data_from_automaton(mm, input_al,
+                                                           num_examples=10000, lens=(2, 5, 8, 10))
 
     training_data = (train_seq, train_labels)
 
@@ -90,11 +90,15 @@ def lbt_of_2_same_trainings():
 def retraining_based_on_ground_truth(ground_truth_model=get_coffee_machine(), num_train_samples=5000,
                                      lens=(2, 8, 10, 12, 15)):
     input_al = ground_truth_model.get_input_alphabet()
-    output_al = {output for state in ground_truth_model.states for output in state.output_fun.values()}
+
+    if isinstance(ground_truth_model, MealyMachine):
+        output_al = {output for state in ground_truth_model.states for output in state.output_fun.values()}
+    else:
+        output_al = [False, True]
 
     # Create initial training data
-    train_seq, train_labels = generate_data_from_mealy(ground_truth_model, input_al,
-                                                       num_examples=num_train_samples, lens=lens)
+    train_seq, train_labels = generate_data_from_automaton(ground_truth_model, input_al,
+                                                           num_examples=num_train_samples, lens=lens)
 
     # While the input-output behaviour of all trained neural networks is different
     iter = 0
@@ -157,11 +161,15 @@ def retraining_based_on_non_conformance(ground_truth_model=get_coffee_machine(),
     assert num_rnns >= 2 and num_training_samples > 0
 
     input_al = ground_truth_model.get_input_alphabet()
-    output_al = {output for state in ground_truth_model.states for output in state.output_fun.values()}
+
+    if isinstance(ground_truth_model, MealyMachine):
+        output_al = {output for state in ground_truth_model.states for output in state.output_fun.values()}
+    else:
+        output_al = [False, True]
 
     # Create initial training data
-    train_seq, train_labels = generate_data_from_mealy(ground_truth_model, input_al,
-                                                       num_examples=num_training_samples, lens=samples_lens)
+    train_seq, train_labels = generate_data_from_automaton(ground_truth_model, input_al,
+                                                           num_examples=num_training_samples, lens=samples_lens)
 
     # While the input-output behaviour of all trained neural networks is different
     iter = 0
@@ -232,8 +240,10 @@ if __name__ == '__main__':
     # a1 = load_automaton_from_file('lbt1.dot')
     # a2 = load_automaton_from_file('lbt2.dot')
     #
-
-    retraining_based_on_ground_truth()
+    dfa = get_tomita(3)
+    retraining_based_on_ground_truth(dfa)
 
     # train_extract_retrain('TrainingDataAndAutomata/MQTT.dot', ex_name='mqtt_lbt', lens=(10, 12), load=False,
     #                      num_train_samples=5000)
+
+
