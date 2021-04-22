@@ -240,8 +240,9 @@ if __name__ == '__main__':
     # a1 = load_automaton_from_file('lbt1.dot')
     # a2 = load_automaton_from_file('lbt2.dot')
     #
+
     dfa = get_tomita(3)
-    retraining_based_on_ground_truth(dfa)
+    retraining_based_on_non_conformance(dfa)
 
     # train_extract_retrain('TrainingDataAndAutomata/MQTT.dot', ex_name='mqtt_lbt', lens=(10, 12), load=False,
     #                      num_train_samples=5000)

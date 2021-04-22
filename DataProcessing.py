@@ -141,9 +141,14 @@ def generate_concrete_data_MQTT(num_examples, num_rand_topics=5, lens=(1, 2, 4, 
 
     for l in ex_per_len.keys():
         for i in range(ex_per_len[l]):
-            seq = [choice(input_al) for _ in range(l)]
-            if i == 0 and l != 1 and random.random() >= 0.15:
-                seq[0] = 'connect'
+            if random.random() <= 0.15 and l > 1:
+                seq = [choice(input_al) for _ in range(l)]
+            else:
+                seq = ['connect']
+                possible_inputs = ['subscribe', 'unsubscribe', 'publish']
+                if random.random() <= 0.2:
+                    possible_inputs.extend(['disconnect', 'connect', 'invalid'])
+                seq.extend([choice(possible_inputs) for _ in range(l - 1)])
 
             mealy_machine.reset_to_initial()
             out = None

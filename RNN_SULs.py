@@ -81,20 +81,28 @@ class AbstractMQTT_RNN_SUL(SUL):
         self.abstract_outputs = ['CONNACK', 'CONCLOSED', 'SUBACK', 'UNSUBACK', 'PUBACK__PUBLISH', 'PUBACK']
 
         self.concrete_inputs = concrete_input_al
-        self.concrete_inputs.sort()
+        # self.concrete_inputs.sort()
 
         self.concrete_outputs = concrete_output_al
+        self.topics = []
+        self.current_topic = None
 
         self.abstract_2_concrete_inputs_map = defaultdict(list)
 
         self.int_2_output_dict = {i: o for i, o in enumerate(concrete_output_al)}
-
         self.create_abstract_alphabets()
 
     def create_abstract_alphabets(self):
+        import re
+        quoted = re.compile('"([^"]*)"')
+
         for i in self.concrete_inputs:
             for ai in self.abstract_inputs:
                 if i.startswith(ai):
+                    if 'topic' in i:
+                        for value in quoted.findall(i):
+                            if value not in self.topics:
+                                self.topics.append(value)
                     self.abstract_2_concrete_inputs_map[ai].append(i)
                     break
 
@@ -102,16 +110,29 @@ class AbstractMQTT_RNN_SUL(SUL):
 
     def pre(self):
         self.rnn.state = self.rnn.rnn.initial_state()
+        self.current_topic = choice(self.topics)
 
     def post(self):
+        self.seq.clear()
         self.rnn.renew()
 
     def step(self, letter):
-        concrete_input = choice(self.abstract_2_concrete_inputs_map[letter])  # TODO this could lead to non-det
+        concrete_inputs = self.abstract_2_concrete_inputs_map[letter]
 
+        if 'topic' in concrete_inputs[0]:
+            current_topic = None
+            for cv in concrete_inputs:
+                if self.current_topic in cv:
+                    current_topic = cv
+                    break
+            assert current_topic
+            concrete_input = current_topic
+        else:
+            concrete_input = concrete_inputs[0]
         # concrete_input = self.abstract_2_concrete_inputs_map[letter][0]
         # print(concrete_input)
         self.seq.append(concrete_input)
+
         out = self.rnn.step(concrete_input)
 
         concrete_out = self.int_2_output_dict[out]
