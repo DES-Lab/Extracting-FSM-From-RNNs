@@ -154,22 +154,23 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
             eq_oracle = TransitionFocusOracle(alphabet, sul)
 
         cex_set = []
-        for _ in range(5):
+        for _ in range(10):
             cex = eq_oracle.find_cex(aalpy_dfa)
             if cex and cex not in cex_set:
                 cex_set.append(cex)
 
+        cex_set.sort(key=len)
         real_cex = verify_cex(aalpy_dfa, weiss_dfa, rnn, cex_set)
         if not real_cex:
             print('Spurious CEX')
             assert False
         print('Few Counterexamples')
-        print('  ', cex_set)
+        print('  ', cex_set[:3])
 
 
 if __name__ == '__main__':
 
-    # # Run extraction on all pre-trained tomita examples
+    # Run extraction on all pre-trained tomita examples
     for tomita_ex in tomita_dicts.keys():
         for nn in [GRUNetwork, LSTMNetwork]:
             run_comparison(tomita_ex, rnn_class=nn, train=False)
