@@ -19,8 +19,8 @@ def make_train_set_for_target(target,alphabet,lengths=None,max_train_samples_per
         train_set.update({w:True for w in pos})
         train_set.update({w:False for w in neg})
 
-    print("made train set of size:",len(train_set),", of which positive examples:",
-        len([w for w in train_set if train_set[w]==True]))
+    #print("made train set of size:",len(train_set),", of which positive examples:",
+    #    len([w for w in train_set if train_set[w]==True]))
     return train_set
 
 #curriculum
