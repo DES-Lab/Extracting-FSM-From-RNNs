@@ -79,7 +79,7 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
 
 if __name__ == '__main__':
 
-    # Run extraction on all pre-trained tomita examles
+    # Run extraction on all pre-trained tomita examples
     for tomita_ex in tomita_dicts.keys():
         for nn in [GRUNetwork, LSTMNetwork]:
             run_comparison(tomita_ex, rnn_class=nn, train=False)
