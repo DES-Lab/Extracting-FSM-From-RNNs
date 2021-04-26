@@ -130,12 +130,12 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
 
     alphabet = list(alphabet)
 
-    eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=1000, walk_len=20)
+    eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=5000, walk_len=20)
     if 'tomita' not in example:
         eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=1000, walk_len=20)
 
-    aalpy_dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type='dfa', max_learning_rounds=15,
-                            suffix_closedness=False, print_level=1 if verbose else 0)
+    aalpy_dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type='dfa', max_learning_rounds=10,
+                            suffix_closedness=True, print_level=1 if verbose else 0)
 
     enablePrint()
     if len(aalpy_dfa.states) != len(dfa_weiss.Q):
@@ -146,9 +146,9 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
         print(
             f"Number of states\n  White-box extraction: {len(dfa_weiss.Q)}\n  Black-box extraction: {len(aalpy_dfa.states)}")
 
-        weiss_dfa = Weiss_to_AALpy_DFA_format(dfa_weiss)
+        translated_weiss_2_aalpy = Weiss_to_AALpy_DFA_format(dfa_weiss)
 
-        sul = DfaSUL(weiss_dfa)
+        sul = DfaSUL(translated_weiss_2_aalpy)
         eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=10000, walk_len=20)
         if 'tomita' not in example:
             eq_oracle = TransitionFocusOracle(alphabet, sul)
@@ -160,7 +160,7 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
                 cex_set.append(cex)
 
         cex_set.sort(key=len)
-        real_cex = verify_cex(aalpy_dfa, weiss_dfa, rnn, cex_set)
+        real_cex = verify_cex(aalpy_dfa, translated_weiss_2_aalpy, rnn, cex_set)
         if not real_cex:
             print('Spurious CEX')
             assert False
