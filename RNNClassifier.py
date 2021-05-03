@@ -8,10 +8,13 @@ nn_type_options = ["LSTM", "GRU"]
 
 
 class RNNClassifier:
-    def __init__(self, alphabet, num_layers, output_dim, hidden_dim, x_train, y_train, x_test=None, y_test=None,
+    """
+    Class used to train RNNs (GRU or LSTM). Input and output data are one-hot encoded.
+    """
+    def __init__(self, input_alphabet, num_layers, output_dim, hidden_dim, x_train, y_train, x_test=None, y_test=None,
                  batch_size=32, nn_type="LSTM"):
         assert nn_type in nn_type_options
-        self.vocab_size = len(alphabet) + 1
+        self.vocab_size = len(input_alphabet) + 1
         input_dim = self.vocab_size - 1
         output_dim = output_dim
         num_of_classes = len(set(y_train)) if not y_test else len(set(y_test).union(set(y_train)))
@@ -19,7 +22,7 @@ class RNNClassifier:
         self.state = None
 
         self.state_size = hidden_dim
-        self.token_dict = dict((c, i) for i, c in enumerate(alphabet))
+        self.token_dict = dict((c, i) for i, c in enumerate(input_alphabet))
 
         self.pc = dy.ParameterCollection()
         self.input_lookup = self.pc.add_lookup_parameters((self.vocab_size, input_dim))  # TODO DOUBLE-CHECK

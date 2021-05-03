@@ -25,7 +25,7 @@ def train_RNN_on_tomita_grammar(tomita_grammar, acc_stop=1., loss_stop=0.005, tr
     x, y = parse_data(path)
     x_train, y_train, x_test, y_test = preprocess_binary_classification_data(x, y, tomita_alphabet)
 
-    # TODO CHANGE PARAMETERS OF THE RNN if you want
+    # CHANGE PARAMETERS OF THE RNN if you want
     rnn = RNNClassifier(tomita_alphabet, output_dim=2, num_layers=2, hidden_dim=50, batch_size=18,
                         x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, nn_type="LSTM")
 
@@ -63,7 +63,7 @@ def train_and_extract_bp(path="TrainingDataAndAutomata/balanced()_1.txt", load=F
     x, y = parse_data(path)
     x_train, y_train, x_test, y_test = preprocess_binary_classification_data(x, y, bp_alphabet)
 
-    # TODO CHANGE PARAMETERS OF THE RNN if you want
+    # CHANGE PARAMETERS OF THE RNN if you want
     rnn = RNNClassifier(bp_alphabet, output_dim=2, num_layers=2, hidden_dim=50, x_train=x_train,
                         y_train=y_train, x_test=x_test, y_test=y_test, batch_size=18, nn_type="GRU")
 
@@ -145,19 +145,16 @@ def train_RNN_on_mealy_data(mealy_machine, data, ex_name, num_hidden_dim=2, hidd
     return rnn
 
 
-def extract_mealy_machine(rnn, input_al, output_al, max_learning_rounds=10, formalism='mealy', print_level=2):
+def extract_mealy_machine(rnn, input_alphabet, output_al, max_learning_rounds=10, formalism='mealy', print_level=2):
     assert formalism in ['mealy', 'moore']
 
     outputs_2_ints = {integer: output for output, integer in tokenized_dict(output_al).items()}
 
     sul = RnnMealySUL(rnn, outputs_2_ints)
 
-    eq_oracle = StatePrefixEqOracle(input_al, sul, walks_per_state=150, walk_len=25)
+    eq_oracle = StatePrefixEqOracle(input_alphabet, sul, walks_per_state=150, walk_len=25)
 
-    #print('Starting extraction of automaton')
-
-    # TODO Change automata learning setting if you want
-    learned_automaton = run_Lstar(alphabet=input_al, sul=sul, eq_oracle=eq_oracle, automaton_type=formalism,
+    learned_automaton = run_Lstar(alphabet=input_alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type=formalism,
                                   cache_and_non_det_check=False, max_learning_rounds=max_learning_rounds,
                                   suffix_closedness=False, print_level=print_level)
 
@@ -201,8 +198,3 @@ if __name__ == '__main__':
             print(cex)
             print('Correct : ', correct_sul.query(cex))
             print('Learned : ', sul.query(cex))
-
-    # cex_set = learning_based_testing_against_correct_model('TrainingDataAndAutomata/Coffee_machine.dot', 'LearnedAutomata/learned_coffee_2.dot', cex_rounds=10)
-    # print(cex_set)
-    # training_x, training_y = training_data_from_cex_set(cex_set, 'TrainingDataAndAutomata/Coffee_machine.dot')
-    # print(training_x, training_y)

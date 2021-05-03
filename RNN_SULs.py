@@ -5,6 +5,9 @@ from aalpy.base import SUL
 
 
 class RnnBinarySUL(SUL):
+    """
+    SUL used to learn DFA from RNN Binary Classifiers.
+    """
     def __init__(self, nn):
         super().__init__()
         self.word = ""
@@ -23,6 +26,9 @@ class RnnBinarySUL(SUL):
 
 
 class RnnMealySUL(SUL):
+    """
+    SUL used to learn Mealy Machines from RNNs.
+    """
     def __init__(self, nn, int_2_output_dict: dict):
         super().__init__()
         self.rnn = nn
@@ -41,6 +47,10 @@ class RnnMealySUL(SUL):
 
 
 class RNN_BinarySUL_for_Weiss_Framework(SUL):
+    """
+    SUL conforming to the behaviour and methods found in the refinement-based learning framework by Weiss et al.
+    https://github.com/tech-srl/lstar_extraction
+    """
     def __init__(self, nn):
         super().__init__()
         self.word = ""
@@ -50,7 +60,7 @@ class RNN_BinarySUL_for_Weiss_Framework(SUL):
         self.pre()
         # Empty string for DFA
         if len(input_word) == 0:
-            return self.step(None)
+            return [self.step(None)]
         out = [self.predict(input_word)]
         self.post()
         return out
@@ -71,7 +81,10 @@ class RNN_BinarySUL_for_Weiss_Framework(SUL):
         return prediction
 
 
-class AbstractMQTT_RNN_SUL(SUL):
+class Abstract_Mapper_MQTT_RNN_SUL(SUL):
+    """
+    SUL implementing the MAPPER component.
+    """
     def __init__(self, nn, concrete_input_al, concrete_output_al):
         super().__init__()
         self.rnn = nn
@@ -106,8 +119,6 @@ class AbstractMQTT_RNN_SUL(SUL):
                     self.abstract_2_concrete_inputs_map[ai].append(i)
                     break
 
-        # 2 ways of doing things
-
     def pre(self):
         self.rnn.state = self.rnn.rnn.initial_state()
         self.current_topic = choice(self.topics)
@@ -129,8 +140,7 @@ class AbstractMQTT_RNN_SUL(SUL):
             concrete_input = current_topic
         else:
             concrete_input = concrete_inputs[0]
-        # concrete_input = self.abstract_2_concrete_inputs_map[letter][0]
-        # print(concrete_input)
+
         self.seq.append(concrete_input)
 
         out = self.rnn.step(concrete_input)
@@ -143,12 +153,5 @@ class AbstractMQTT_RNN_SUL(SUL):
                 abstract_output = ao
                 break
         assert abstract_output
-
-        # print('============================================')
-        # print(self.seq)
-        # print(letter)
-        # print(concrete_input)
-        # print(concrete_out)
-        # print(abstract_output)
 
         return abstract_output
