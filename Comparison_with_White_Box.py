@@ -61,7 +61,11 @@ def Weiss_to_AALpy_DFA_format(dfa: DFA):
         for inp, out in val.items():
             state.transitions[inp] = prefix_state_dict[out]
 
-    return Dfa(initial_state, states)
+    dfa = Dfa(initial_state, states)
+    for state in states:
+        state.prefix = dfa.get_shortest_path(initial_state, state)
+
+    return dfa
 
 
 #
@@ -118,7 +122,7 @@ def train_or_load_rnn(example, num_layers=2, hidden_dim=50, rnn_class=GRUNetwork
                                               search_size_per_length=2000, lengths=lengths)
     else:
         # balanced parentheses train set
-        train_set = get_balanced_parantheses_train_set(n=20000, short=1, longg=15)
+        train_set = get_balanced_parantheses_train_set(n=20000, short=1, longg=5)
 
     if train:
         # Train the RNN
@@ -126,7 +130,7 @@ def train_or_load_rnn(example, num_layers=2, hidden_dim=50, rnn_class=GRUNetwork
         # Save it to file
         rnn.save(f'RNN_Models/WeissComparisonModels/{example}_{nn_props}.rnn')
         print('saving to', f'RNN_Models/WeissComparisonModels/{example}_{nn_props}.rnn')
-        exit()
+        #exit()
     else:
         # loads the neural network if it has been pretrained... will terminate the execution if weights file does
         # not exist
