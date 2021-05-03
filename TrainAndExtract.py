@@ -79,10 +79,9 @@ def train_and_extract_bp(path="TrainingDataAndAutomata/balanced()_1.txt", load=F
                                             same_state_prob=0.3)
 
     dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=state_eq_oracle, automaton_type='dfa',
-                    cache_and_non_det_check=False, max_learning_rounds=4)
+                    cache_and_non_det_check=False, max_learning_rounds=5)
 
     save_automaton_to_file(dfa, f'LearnedAutomata/balanced_parentheses{data_index}')
-    visualize_automaton(dfa)
     return dfa
 
 

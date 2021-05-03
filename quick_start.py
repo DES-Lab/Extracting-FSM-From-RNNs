@@ -23,8 +23,14 @@ save_automaton_to_file(dfa, f'RNN_Models/tomita{3}')
 visualize_automaton(dfa)
 
 # train and extract balanced parentheses
-train_and_extract_bp(path='TrainingDataAndAutomata/balanced()_2.txt', load=False)
+bp_model = train_and_extract_bp(path='TrainingDataAndAutomata/balanced()_2.txt', load=False)
+print("Print extracted model")
+print(bp_model)
 
 # train and learn mealy machine example
 coffee_machine_automaton = train_RNN_and_extract_FSM('coffee')
+save_automaton_to_file(coffee_machine_automaton, 'CoffeeMachineModel')
+
 mqtt_automaton = train_RNN_and_extract_FSM('mqtt')
+save_automaton_to_file(coffee_machine_automaton, 'MqttModel')
+
