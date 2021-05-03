@@ -59,7 +59,7 @@ In the `notebooks` folder, you can find many examples and associated outputs. Ex
 - `LearnedAutomata/` - automata representing the behavior of RNN's inferred via automata learning
 - `TrainingDataAndAutomata/` - data and automata used for RNN training and verification 
 - `RNN_Models/` - weights of the pre-trained RNNs
-- `Refinement-based_extraction/` - [source code]((https://github.com/tech-srl/lstar_extraction)) from very interesting paper on automata extraction from RNNs[Extracting Automata from Recurrent Neural Networks Using Queries and Counterexamples](http://proceedings.mlr.press/v80/weiss18a/weiss18a.pdf)
+- `Refinement-based_extraction/` - [source code]((https://github.com/tech-srl/lstar_extraction)) from [very interesting paper](http://proceedings.mlr.press/v80/weiss18a/weiss18a.pdf)u on automata extraction from RNNs
 - `Notebooks` - interactive examples
 ##
 - `DataProcessing.py` - a collection of helper functions used to prepare data for learning
@@ -71,7 +71,7 @@ In the `notebooks` folder, you can find many examples and associated outputs. Ex
 - `Comparison_with_White_Box.py` - comparison of our approach to [Weiss et al.](https://github.com/tech-srl/lstar_extraction)
 - `Applications.py` - a proof-of-concept for learning RNNs abstract behavior with mapper component, and learning-based testing of multiple trained RNNs and their applications
 
-## How to Install and Note on Dependencies
+## Install and Run
 
 To run extraction, only dependencies are [AALpy](https://github.com/DES-Lab/AALpy) and [Dynet](https://dynet.readthedocs.io/en/latest/).
 However, to run a comparison with the refinement-based approach proposed by Weiss et al., further dependencies are required.
@@ -81,9 +81,7 @@ To install, clone this repo (suggestion: create a python virtual environment) an
 pip install -r  requirements.txt
 ``
 
-## How to Run
-
 `TrainAndExtract.py`, `Comparison_with_White_Box.py`, and `Applications.py` all have main function defined at the bottom of the file.
 `quick_start.py` has the simple minimal example that shows how to train RNNS and extract multiple models.
 Notebooks folder contains the text output/interactive examples for some examples.
-Furthermore, interactive notebooks can be found at TODO.
+Furthermore, interactive notebooks can be found in the `notebooks` folder.
