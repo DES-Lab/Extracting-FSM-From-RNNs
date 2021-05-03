@@ -7,6 +7,7 @@ Few possible application of this approach are also presented.
 ## Structure of the repo:
 - `LearnedAutomata/` - automata representing behaviour of RNN's inferred via automata learning
 - `TrainingDataAndAutomata/` - data and automata used for RNN training and verification 
+- `RNN_Models/` - weights of the pretrained RNNs
 - `Refinement-based_extraction/` - [source code]((https://github.com/tech-srl/lstar_extraction)) from very interesting paper on automata extraction from RNNs[Extracting Automata from Recurrent Neural Networks Using Queries and Counterexamples](http://proceedings.mlr.press/v80/weiss18a/weiss18a.pdf)
 ##
 - `DataProcessing.py` - collection of helper functions used to prepare data for learning
@@ -31,5 +32,6 @@ pip install -r  requirements.txt
 ## How to Run
 
 `TrainAndExtract.py`, `Comparison_with_White_Box.py`, and `Applications.py` all have  main function defined at the bottom of the file.
+`quick_start.py` has the simple minimal example that show how to train RNNS and extract multiple models.
 Notebooks folder contains the text output/interactive examples for some examples.
 Furthermore, interactive notebooks can be found at TODO.
