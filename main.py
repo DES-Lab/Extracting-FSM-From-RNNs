@@ -3,7 +3,7 @@ from aalpy.oracles import StatePrefixEqOracle
 from aalpy.utils import save_automaton_to_file, visualize_automaton
 
 from RNN_SULs import RnnBinarySUL
-from TrainAndExtract import train_RNN_on_tomita_grammar, train_and_extract_bp, learn_and_extract_mealy
+from TrainAndExtract import train_RNN_on_tomita_grammar, train_and_extract_bp, train_RNN_and_extract_FSM
 
 # learn and extract tomita 3 grammar.
 # same can be achieved with train_and_extract_tomita function
@@ -26,5 +26,5 @@ visualize_automaton(dfa)
 train_and_extract_bp(path='TrainingDataAndAutomata/balanced()_2.txt', load=False)
 
 # train and learn mealy machine example
-coffee_machine_automaton = learn_and_extract_mealy('coffee')
-mqtt_automaton = learn_and_extract_mealy('mqtt')
+coffee_machine_automaton = train_RNN_and_extract_FSM('coffee')
+mqtt_automaton = train_RNN_and_extract_FSM('mqtt')

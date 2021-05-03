@@ -1,8 +1,8 @@
 from time import clock
-from Weiss_et_al.ObservationTable import TableTimedOut
-from Weiss_et_al.DFA import DFA
-from Weiss_et_al.Teacher import Teacher
-from Weiss_et_al.Lstar import run_lstar
+from Refinement_based_extraction.ObservationTable import TableTimedOut
+from Refinement_based_extraction.DFA import DFA
+from Refinement_based_extraction.Teacher import Teacher
+from Refinement_based_extraction.Lstar import run_lstar
 
 def extract(rnn,time_limit = 50,initial_split_depth = 10,starting_examples=None):
 	print("provided counterexamples are:",starting_examples)

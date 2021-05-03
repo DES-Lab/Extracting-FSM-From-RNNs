@@ -1,6 +1,6 @@
-from Weiss_et_al.LSTM import LSTMNetwork
-from Weiss_et_al.GRU import GRUNetwork
-from Weiss_et_al.LinearTransform import LinearTransform
+from Refinement_based_extraction.LSTM import LSTMNetwork
+from Refinement_based_extraction.GRU import GRUNetwork
+from Refinement_based_extraction.LinearTransform import LinearTransform
 import dynet as dy
 from time import clock
 import random

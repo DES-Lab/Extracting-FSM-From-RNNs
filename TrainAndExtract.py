@@ -1,14 +1,12 @@
 import string
 
-from aalpy.SULs import MealySUL
 from aalpy.automata import MealyMachine
 from aalpy.learning_algs import run_Lstar
-from aalpy.oracles import StatePrefixEqOracle, TransitionFocusOracle, RandomWalkEqOracle, RandomWordEqOracle
-from aalpy.utils import save_automaton_to_file, visualize_automaton, load_automaton_from_file
+from aalpy.oracles import StatePrefixEqOracle, TransitionFocusOracle
+from aalpy.utils import save_automaton_to_file, visualize_automaton
 
 from DataProcessing import parse_data, preprocess_binary_classification_data, generate_data_from_automaton, \
-    split_train_validation, tokenized_dict, get_coffee_machine, generate_data_based_on_characterization_set, \
-    get_mqtt_mealy, get_ssh, get_tcp
+    split_train_validation, tokenized_dict, get_coffee_machine, get_mqtt_mealy, get_ssh, get_tcp
 from RNNClassifier import RNNClassifier
 from RNN_SULs import RnnBinarySUL, RnnMealySUL
 
@@ -43,7 +41,7 @@ def train_and_extract_tomita(tomita_grammar, acc_stop=1., loss_stop=0.005, load=
         rnn = train_RNN_on_tomita_grammar(tomita_grammar, acc_stop=acc_stop, loss_stop=loss_stop)
     else:
         rnn = train_RNN_on_tomita_grammar(tomita_grammar, train=False)
-        rnn.load(f"RNN_Models/tomita{tomita_grammar}.model")
+        rnn.load(f"RNN_Models/tomita_{tomita_grammar}.model")
 
     sul = RnnBinarySUL(rnn)
     alphabet = tomita_alphabet
@@ -145,7 +143,7 @@ def train_RNN_on_mealy_data(mealy_machine, data, ex_name, num_hidden_dim=2, hidd
     return rnn
 
 
-def extract_mealy_machine(rnn, input_alphabet, output_al, max_learning_rounds=10, formalism='mealy', print_level=2):
+def extract_finite_state_transducer(rnn, input_alphabet, output_al, max_learning_rounds=10, formalism='mealy', print_level=2):
     assert formalism in ['mealy', 'moore']
 
     outputs_2_ints = {integer: output for output, integer in tokenized_dict(output_al).items()}
@@ -161,7 +159,7 @@ def extract_mealy_machine(rnn, input_alphabet, output_al, max_learning_rounds=10
     return learned_automaton
 
 
-def learn_and_extract_mealy(ex_name):
+def train_RNN_and_extract_FSM(ex_name, automaton_type = 'mealy'):
     mealy_dict = {'coffee': get_coffee_machine(), 'mqtt': get_mqtt_mealy(),
                   'tcp': get_tcp(), 'ssh': get_ssh()}
 
@@ -170,31 +168,20 @@ def learn_and_extract_mealy(ex_name):
     input_al = mealy_dict[ex_name].get_input_alphabet()
     output_al = {output for state in mealy_dict[ex_name].states for output in state.output_fun.values()}
 
-    learned_automaton = extract_mealy_machine(rnn, input_al, output_al)
+    learned_automaton = extract_finite_state_transducer(rnn, input_al, output_al, formalism=automaton_type)
 
-    # save_automaton_to_file(learned_automaton, f'LearnedAutomata/learned_{ex_name}')
-    # visualize_automaton(learned_automaton)
     return learned_automaton
 
 
 if __name__ == '__main__':
-    # train_and_extract_tomita(tomita_grammar=3, load=False)
+    # Train on a any of the 7 Tomita grammars and extract the DFA from the trained RNN
+    tomita_dfa = train_and_extract_tomita(3, load=False)
 
-    # learning based testing with coffee machine, RNN models saved to coffee_1, and coffee_2
-    # coffee_1 -> lens=(3,5,7,10,12), num_train_samples=50000
-    # coffee_2 -> lens=(2,8,10,12,15), num_train_samples=50000
+    # Train on a Balanced Parentheses Dataset and extract the DFA
+    bp_dfa = train_and_extract_bp()
 
-    learned_automaton = learn_and_extract_mealy('mqtt')
-    correct = get_mqtt_mealy()
-    input_al = correct.get_input_alphabet()
-    sul = MealySUL(learned_automaton)
-    correct_sul = MealySUL(correct)
-    eq_oracle = StatePrefixEqOracle(input_al, sul)
+    # Extract Mealy and Moore machine from RNN trained on the coffee machine FMS
+    coffee_machine_Mealy_model = train_RNN_and_extract_FSM('coffee')
+    coffee_machine_Moore_model = train_RNN_and_extract_FSM('coffee', automaton_type='moore')
 
-    for _ in range(10):
-        cex = eq_oracle.find_cex(correct)
-        if cex:
-            print("------------------------------------------------")
-            print(cex)
-            print('Correct : ', correct_sul.query(cex))
-            print('Learned : ', sul.query(cex))
+

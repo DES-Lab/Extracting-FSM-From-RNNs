@@ -3,7 +3,7 @@ import graphviz as gv
 import functools
 from copy import deepcopy, copy
 import itertools
-import Weiss_et_al.Lstar
+import Refinement_based_extraction.Lstar
 from random import randint, shuffle
 import random
 from time import clock

@@ -3,15 +3,15 @@ import pickle
 from aalpy.SULs import DfaSUL, MealySUL, MooreSUL
 from aalpy.automata import Dfa, MealyMachine
 from aalpy.learning_algs import run_Lstar
-from aalpy.oracles import StatePrefixEqOracle, RandomWalkEqOracle
-from aalpy.utils import load_automaton_from_file, save_automaton_to_file, visualize_automaton
+from aalpy.oracles import StatePrefixEqOracle
+from aalpy.utils import visualize_automaton
 
 from DataProcessing import generate_data_from_automaton, split_train_validation, tokenize, \
-    get_coffee_machine, get_mqtt_mealy, tokenized_dict, get_tomita, generate_concrete_data_MQTT
+    get_coffee_machine, get_mqtt_mealy, tokenized_dict, generate_concrete_data_MQTT
 from LongCexEqOracle import LongCexEqOracle
 from RNNClassifier import RNNClassifier
 from RNN_SULs import RnnMealySUL, Abstract_Mapper_MQTT_RNN_SUL
-from TrainAndExtract import extract_mealy_machine, train_RNN_on_mealy_data
+from TrainAndExtract import extract_finite_state_transducer, train_RNN_on_mealy_data
 
 
 def learn_with_mapper():
@@ -54,36 +54,6 @@ def learn_with_mapper():
 
     visualize_automaton(model)
     return model
-
-
-# def learning_based_testing_against_correct_model(model_correct_path, model_learned_path, cex_rounds=10,
-#                                                  automaton_type='mealy'):
-#     """
-#
-#     :param model_correct_path: path to the correct model
-#     :param model_learned_path: path to the learned model
-#     :param cex_rounds: max number of unique cex that will be found
-#     :param automaton_type: dfa, mealy or moore
-#     :return: Found cases of non-conformance between correct model and model extracted from RNN
-#     """
-#     model_correct = load_automaton_from_file(model_correct_path, compute_prefixes=True, automaton_type=automaton_type)
-#     model_learned = load_automaton_from_file(model_learned_path, compute_prefixes=True, automaton_type=automaton_type)
-#
-#     alphabet = model_correct.get_input_alphabet()
-#     model_1_sul = DfaSUL(model_learned) if automaton_type == 'dfa' else MealySUL(model_learned)
-#
-#     eq_oracle = RandomWalkEqOracle(alphabet, model_1_sul, num_steps=5000, reset_prob=0.09, reset_after_cex=True)
-#     eq_oracle = LongCexEqOracle(alphabet, model_1_sul, num_walks=500, min_walk_len=1, max_walk_len=20,
-#                                 reset_after_cex=True)
-#     eq_oracle = StatePrefixEqOracle(alphabet, model_1_sul, walks_per_state=100, walk_len=20)
-#
-#     cex_set = set()
-#     for i in range(cex_rounds):
-#         cex = eq_oracle.find_cex(model_correct)
-#         if cex:
-#             cex_set.add(tuple(cex))
-#
-#     return cex_set
 
 
 def label_sequences_with_correct_model(ground_truth_model, cex_set):
@@ -129,8 +99,8 @@ def conformance_check_2_RNNs(experiment='coffee'):
     rnn_1 = train_RNN_on_mealy_data(mm, data=training_data, ex_name=f'{exp}_1')
     rnn_2 = train_RNN_on_mealy_data(mm, data=training_data, ex_name=f'{exp}_2')
 
-    learned_automaton_1 = extract_mealy_machine(rnn_1, input_al, output_al, max_learning_rounds=25)
-    learned_automaton_2 = extract_mealy_machine(rnn_2, input_al, output_al, max_learning_rounds=25)
+    learned_automaton_1 = extract_finite_state_transducer(rnn_1, input_al, output_al, max_learning_rounds=25)
+    learned_automaton_2 = extract_finite_state_transducer(rnn_2, input_al, output_al, max_learning_rounds=25)
 
     sul = MealySUL(learned_automaton_1)
     sul2 = MealySUL(learned_automaton_2)
@@ -279,7 +249,7 @@ def retraining_based_on_non_conformance(ground_truth_model=get_coffee_machine(),
         # Extract automaton for each neural network
         for i, rnn in enumerate(trained_networks):
             print(f'Starting extraction of the automaton from RNN {i}')
-            learned_automaton = extract_mealy_machine(rnn, input_al, output_al, max_learning_rounds=6, print_level=0)
+            learned_automaton = extract_finite_state_transducer(rnn, input_al, output_al, max_learning_rounds=6, print_level=0)
             learned_automatons.append(learned_automaton)
 
         learned_automatons.sort(key=lambda x: len(x.states), reverse=True)
@@ -324,13 +294,16 @@ def retraining_based_on_non_conformance(ground_truth_model=get_coffee_machine(),
 
 
 if __name__ == '__main__':
-    # a1 = load_automaton_from_file('lbt1.dot')
-    # a2 = load_automaton_from_file('lbt2.dot')
-    #
-    conformance_check_2_RNNs()
-    exit()
 
+    # Find differences between 2 trained RNNs
+    conformance_check_2_RNNs()
+
+    # Retrain RNN based on non-conformance between the trained RNN and the ground truth/correct model
+    retraining_based_on_ground_truth()
+
+    # Retrain RNN based on non-conformance between several trained RNN with minimal querying of the ground
+    # truth/correct model
     retraining_based_on_non_conformance(get_mqtt_mealy(), num_rnns=4, num_training_samples=1000)
 
-    # train_extract_retrain('TrainingDataAndAutomata/MQTT.dot', ex_name='mqtt_lbt', lens=(10, 12), load=False,
-    #                      num_train_samples=5000)
+    # Learn the abstract model of the RNN trained on the concrete samples
+    learn_with_mapper()

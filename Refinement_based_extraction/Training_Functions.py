@@ -1,4 +1,4 @@
-from Weiss_et_al.Helper_Functions import n_words_of_length
+from Refinement_based_extraction.Helper_Functions import n_words_of_length
 
 def make_train_set_for_target(target,alphabet,lengths=None,max_train_samples_per_length=300,search_size_per_length=1000,provided_examples=None):
     train_set = {}

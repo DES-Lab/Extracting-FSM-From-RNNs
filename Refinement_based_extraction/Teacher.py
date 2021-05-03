@@ -1,5 +1,5 @@
-from Weiss_et_al.Quantisations import SVMDecisionTreeQuantisation
-from Weiss_et_al.WhiteboxRNNCounterexampleGenerator import WhiteboxRNNCounterexampleGenerator
+from Refinement_based_extraction.Quantisations import SVMDecisionTreeQuantisation
+from Refinement_based_extraction.WhiteboxRNNCounterexampleGenerator import WhiteboxRNNCounterexampleGenerator
 from time import clock
 
 class Teacher:

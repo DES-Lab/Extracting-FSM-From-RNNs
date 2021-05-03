@@ -1,5 +1,5 @@
-from Weiss_et_al.ObservationTable import ObservationTable
-import Weiss_et_al.DFA
+from Refinement_based_extraction.ObservationTable import ObservationTable
+import Refinement_based_extraction.DFA
 from time import clock
 
 def run_lstar(teacher,time_limit):
@@ -16,7 +16,7 @@ def run_lstar(teacher,time_limit):
                 continue
             else:
                 break
-        dfa = Weiss_et_al.DFA.DFA(obs_table=table)
+        dfa = Refinement_based_extraction.DFA.DFA(obs_table=table)
         print("obs table refinement took " + str(int(1000*(clock()-start))/1000.0) )
         counterexample = teacher.equivalence_query(dfa)
         if None is counterexample:

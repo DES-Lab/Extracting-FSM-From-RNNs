@@ -9,14 +9,14 @@ from aalpy.oracles import TransitionFocusOracle, RandomWMethodEqOracle, RandomWo
 from aalpy.utils import visualize_automaton, load_automaton_from_file
 
 from RNN_SULs import RNN_BinarySUL_for_Weiss_Framework
-from Weiss_et_al.DFA import DFA
-from Weiss_et_al.Extraction import extract
-from Weiss_et_al.GRU import GRUNetwork
-from Weiss_et_al.LSTM import LSTMNetwork
-from Weiss_et_al.RNNClassifier import RNNClassifier
-from Weiss_et_al.Specific_Language_Generation import get_balanced_parantheses_train_set
-from Weiss_et_al.Tomita_Grammars import tomita_dicts
-from Weiss_et_al.Training_Functions import make_train_set_for_target, mixed_curriculum_train
+from Refinement_based_extraction.DFA import DFA
+from Refinement_based_extraction.Extraction import extract
+from Refinement_based_extraction.GRU import GRUNetwork
+from Refinement_based_extraction.LSTM import LSTMNetwork
+from Refinement_based_extraction.RNNClassifier import RNNClassifier
+from Refinement_based_extraction.Specific_Language_Generation import get_balanced_parantheses_train_set
+from Refinement_based_extraction.Tomita_Grammars import tomita_dicts
+from Refinement_based_extraction.Training_Functions import make_train_set_for_target, mixed_curriculum_train
 
 
 # Disable
@@ -29,8 +29,10 @@ def enablePrint():
     sys.stdout = sys.__stdout__
 
 
-# Transform the DFA fromat found in Weiss Framework to the AALpy DFA format
 def Weiss_to_AALpy_DFA_format(dfa: DFA):
+    """
+    Transform the DFA fromat found in Weiss Framework to the AALpy DFA format
+    """
     from aalpy.automata import Dfa, DfaState
 
     alphabet = dfa.alphabet
@@ -62,8 +64,16 @@ def Weiss_to_AALpy_DFA_format(dfa: DFA):
     return Dfa(initial_state, states)
 
 
-# Verify that counterexamples are not spurious and find which model classified correctly
+#
 def verify_cex(aalpy_model, white_box_model, rnn, cex_set):
+    """
+    Verify that counterexamples are not spurious and find which model classified correctly
+    :param aalpy_model: model obtained by our approach
+    :param white_box_model: modle obtained by refinement-based learning
+    :param rnn: RNN that serves as system under learning
+    :param cex_set: found cases of non-conformance between two models
+    :return:
+    """
     correct_model = None
     for cex in cex_set:
         sul1, sul2 = DfaSUL(aalpy_model), DfaSUL(white_box_model)
@@ -219,7 +229,11 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
         print('  ', cex_set[:3])
 
 
-def falsify_white_box():
+def falsify_refinement_based_model():
+    """
+    Show how extensive coverage-based testing can be used to falsify model returned from refinement-based extraction
+    approach.
+    """
     rnn, alphabet, train_set = train_or_load_rnn('bp_1', num_layers=2, hidden_dim=50,
                                                  rnn_class=GRUNetwork, train=False)
 
@@ -254,6 +268,9 @@ def falsify_white_box():
 
 
 def find_bp_cex():
+    """
+    This example shows how transition focus equivalence oracle can be used to efficiently find counterexamples.
+    """
     rnn, alphabet, train_set = train_or_load_rnn('bp_2', num_layers=2, hidden_dim=50,
                                                  rnn_class=GRUNetwork, train=False)
 
@@ -273,11 +290,10 @@ def find_bp_cex():
 
 
 if __name__ == '__main__':
-    falsify_white_box()
-    # find_bp_cex()
-    exit(1)
-    run_comparison('bp_1', rnn_class=GRUNetwork, train=False, insufficient_testing=False, verbose=True)
+
+    falsify_refinement_based_model()
     exit()
+
     # Run extraction on all pre-trained tomita examples
     for tomita_ex in tomita_dicts.keys():
         for nn in [GRUNetwork, LSTMNetwork]:
