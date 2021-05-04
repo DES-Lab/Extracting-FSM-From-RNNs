@@ -249,7 +249,7 @@ def retraining_based_on_non_conformance(ground_truth_model=get_coffee_machine(),
         # Extract automaton for each neural network
         for i, rnn in enumerate(trained_networks):
             print(f'Starting extraction of the automaton from RNN {i}')
-            learned_automaton = extract_finite_state_transducer(rnn, input_al, output_al, max_learning_rounds=6, print_level=0)
+            learned_automaton = extract_finite_state_transducer(rnn, input_al, output_al, max_learning_rounds=8 , print_level=0)
             learned_automatons.append(learned_automaton)
 
         learned_automatons.sort(key=lambda x: len(x.states), reverse=True)
@@ -294,7 +294,8 @@ def retraining_based_on_non_conformance(ground_truth_model=get_coffee_machine(),
 
 
 if __name__ == '__main__':
-
+    retraining_based_on_non_conformance(num_rnns=4, num_training_samples=1000, samples_lens=(3,6,9))
+    exit()
     # Find differences between 2 trained RNNs
     conformance_check_2_RNNs()
 

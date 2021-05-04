@@ -5,7 +5,7 @@ import time
 
 from aalpy.SULs import DfaSUL
 from aalpy.learning_algs import run_Lstar
-from aalpy.oracles import TransitionFocusOracle, RandomWMethodEqOracle, RandomWordEqOracle
+from aalpy.oracles import TransitionFocusOracle, RandomWMethodEqOracle, RandomWordEqOracle, StatePrefixEqOracle
 from aalpy.utils import visualize_automaton, load_automaton_from_file
 
 from RNN_SULs import RNN_BinarySUL_for_Weiss_Framework
@@ -172,13 +172,13 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
     if insufficient_testing:
         eq_oracle = RandomWordEqOracle(alphabet, sul, num_walks=100, min_walk_len=3, max_walk_len=12)
     else:
-        eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=10, walk_len=5)
+        eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=1000, walk_len=25)
         if 'tomita' not in example:
             eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=1000, walk_len=20)
 
     start_black_box = time.time()
     aalpy_dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type='dfa', max_learning_rounds=10,
-                          print_level=1 if verbose else 0, cache_and_non_det_check=True, cex_processing='rs')
+                          print_level=2 , cache_and_non_det_check=False, cex_processing='rs')
     time_black_box = time.time() - start_black_box
 
     enablePrint()
@@ -199,8 +199,6 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
                 verify_cex(aalpy_dfa, translated_weiss_2_aalpy, rnn, [cex])
         return
 
-    visualize_automaton(aalpy_dfa)
-    print(aalpy_dfa)
     if len(aalpy_dfa.states) != len(dfa_weiss.Q):
         print('---------------------------------WHITE vs. BLACK BOX EXTRACTION----------------------------------------')
         nn_props = F'{"GRU" if rnn_class == GRUNetwork else "LSTM"}_layers_{num_layers}_dim_{hidden_dim}'
@@ -229,8 +227,10 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
         if not real_cex:
             print('Spurious CEX')
             assert False
-        print('Few Counterexamples')
-        print('  ', cex_set[:3])
+        #print('Few Counterexamples')
+        #print('  ', cex_set[:3])
+    else:
+        print('Size of both models: ', len(aalpy_dfa.states))
 
 
 def falsify_refinement_based_model():
@@ -259,12 +259,13 @@ def falsify_refinement_based_model():
     white_box_hyp = Weiss_to_AALpy_DFA_format(dfa_weiss)
     sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
     eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=1000, walk_len=20)
+    eq_oracle = StatePrefixEqOracle(alphabet, sul, walks_per_state=1500, walk_len=20)
 
     cex_set = set()
     for _ in range(10):
         start_time = time.time()
         cex = eq_oracle.find_cex(white_box_hyp)
-        if tuple(cex) in cex_set:
+        if not cex or tuple(cex) in cex_set:
             continue
         cex_set.add(tuple(cex))
         end_time = time.time() - start_time
@@ -294,14 +295,12 @@ def find_bp_cex():
 
 
 if __name__ == '__main__':
-
-    falsify_refinement_based_model()
+    run_comparison('tomita_4', rnn_class=LSTMNetwork, train=False, insufficient_testing=False, verbose=True)
     exit()
-
     # Run extraction on all pre-trained tomita examples
     for tomita_ex in tomita_dicts.keys():
         for nn in [GRUNetwork, LSTMNetwork]:
-            run_comparison(tomita_ex, rnn_class=nn, train=False, insufficient_testing=True)
+            run_comparison(tomita_ex, rnn_class=nn, train=False, insufficient_testing=False)
 
     # Run extraction on all pre-trained bp examples
     for i in range(1, 3):

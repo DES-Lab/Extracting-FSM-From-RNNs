@@ -153,7 +153,7 @@ def extract_finite_state_transducer(rnn, input_alphabet, output_al, max_learning
 
     learned_automaton = run_Lstar(alphabet=input_alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type=formalism,
                                   cache_and_non_det_check=False, max_learning_rounds=max_learning_rounds,
-                                  suffix_closedness=False, print_level=print_level)
+                                  suffix_closedness=True, print_level=print_level)
 
     return learned_automaton
 
