@@ -294,7 +294,7 @@ def retraining_based_on_non_conformance(ground_truth_model=get_coffee_machine(),
 
 
 if __name__ == '__main__':
-    retraining_based_on_non_conformance(num_rnns=4, num_training_samples=1000, samples_lens=(3,6,9))
+    retraining_based_on_non_conformance(get_mqtt_mealy(), num_rnns=4, num_training_samples=1000, samples_lens=(3,6,9))
     exit()
     # Find differences between 2 trained RNNs
     conformance_check_2_RNNs()
