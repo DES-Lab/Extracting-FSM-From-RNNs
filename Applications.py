@@ -3,14 +3,14 @@ import pickle
 from aalpy.SULs import DfaSUL, MealySUL, MooreSUL
 from aalpy.automata import Dfa, MealyMachine
 from aalpy.learning_algs import run_Lstar
-from aalpy.oracles import StatePrefixEqOracle
-from aalpy.utils import visualize_automaton
+from aalpy.oracles import StatePrefixEqOracle, RandomWalkEqOracle, RandomWordEqOracle, RandomWMethodEqOracle
+from aalpy.utils import visualize_automaton, load_automaton_from_file
 
 from DataProcessing import generate_data_from_automaton, split_train_validation, tokenize, \
-    get_coffee_machine, get_mqtt_mealy, tokenized_dict, generate_concrete_data_MQTT
+    get_coffee_machine, get_mqtt_mealy, tokenized_dict, generate_concrete_data_MQTT, get_tomita
 from LongCexEqOracle import LongCexEqOracle
 from RNNClassifier import RNNClassifier
-from RNN_SULs import RnnMealySUL, Abstract_Mapper_MQTT_RNN_SUL
+from RNN_SULs import RnnMealySUL, Abstract_Mapper_MQTT_RNN_SUL, RnnBinarySUL
 from TrainAndExtract import extract_finite_state_transducer, train_RNN_on_mealy_data
 
 
@@ -249,7 +249,8 @@ def retraining_based_on_non_conformance(ground_truth_model=get_coffee_machine(),
         # Extract automaton for each neural network
         for i, rnn in enumerate(trained_networks):
             print(f'Starting extraction of the automaton from RNN {i}')
-            learned_automaton = extract_finite_state_transducer(rnn, input_al, output_al, max_learning_rounds=8 , print_level=0)
+            learned_automaton = extract_finite_state_transducer(rnn, input_al, output_al, max_learning_rounds=8,
+                                                                print_level=0)
             learned_automatons.append(learned_automaton)
 
         learned_automatons.sort(key=lambda x: len(x.states), reverse=True)
@@ -293,8 +294,65 @@ def retraining_based_on_non_conformance(ground_truth_model=get_coffee_machine(),
         print(f'Size of training data: {len(train_seq)}')
 
 
+def accuracy_test():
+    ground_truth_model = load_automaton_from_file('TrainingDataAndAutomata/bp_depth4.dot', automaton_type='dfa')
+    input_al = ground_truth_model.get_input_alphabet()
+    output_al = [1, 0]
+
+    train_seq, train_labels = generate_data_from_automaton(ground_truth_model, input_al,
+                                                           num_examples=10000, lens=(1, 2, 3, 5, 8, 10, 12, 15, 20, 25, 30))
+
+    x_train, y_train, x_test, y_test = split_train_validation(train_seq, train_labels, 0.8, uniform=True)
+
+    # Train all neural networks with same parameters, this can be configured to train with different parameters
+    rnn = RNNClassifier(input_al, output_dim=len(output_al), num_layers=2, hidden_dim=50,
+                        x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test,
+                        batch_size=32, nn_type='GRU')
+
+    rnn.train(epochs=150, stop_acc=1.0, stop_epochs=2, verbose=1)
+
+    sul = RnnBinarySUL(rnn)
+    gt_sul = DfaSUL(ground_truth_model)
+
+    random_walk_eq_oracle = RandomWalkEqOracle(input_al, sul, num_steps=10000, reset_prob=0.05)
+    random_word_eq_oracle = RandomWordEqOracle(input_al, sul, min_walk_len=5, max_walk_len=25, num_walks=1000)
+    random_w_eq_oracle = RandomWMethodEqOracle(input_al, sul, walks_per_state=200, walk_len=25)
+
+    learned_model = run_Lstar(input_al, sul, random_word_eq_oracle, automaton_type='dfa', max_learning_rounds=5)
+
+    from random import choice, randint
+    random_tc = []
+    coverage_guided_tc = []
+    num_tc = 1000
+    for _ in range(num_tc):
+        random_tc.append(tuple(choice(input_al) for _ in range(randint(10,25))))
+
+        prefix = choice(learned_model.states).prefix
+        middle = tuple(choice(input_al) for _ in range(20))
+        suffix = choice(learned_model.characterization_set)
+        coverage_guided_tc.append(prefix + middle + suffix)
+
+    num_adv_random = 0
+    for tc in random_tc:
+        correct = gt_sul.query(tc)
+        trained = sul.query(tc)
+        if correct != trained:
+            num_adv_random +=1
+
+    num_adv_guided = 0
+    for tc in coverage_guided_tc:
+        correct = gt_sul.query(tc)
+        trained = sul.query(tc)
+        if correct != trained:
+            num_adv_guided += 1
+
+    print(f'Random sampling: {round((num_adv_random/num_tc)*100,2)}')
+    print(f'Guided sampling: {round((num_adv_guided/num_tc)*100,2)}')
+
 if __name__ == '__main__':
-    retraining_based_on_non_conformance(get_mqtt_mealy(), num_rnns=4, num_training_samples=1000, samples_lens=(3,6,9))
+    accuracy_test()
+    exit()
+    retraining_based_on_non_conformance(get_mqtt_mealy(), num_rnns=4, num_training_samples=1000, samples_lens=(3, 6, 9))
     exit()
     # Find differences between 2 trained RNNs
     conformance_check_2_RNNs()
