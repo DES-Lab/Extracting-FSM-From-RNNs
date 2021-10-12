@@ -1,8 +1,10 @@
 # Black-Box Extraction of RNN's Input-Output Behaviour via Automata Learning
 
 ![High Level Method](high_level_process.png)
-This repo contains source code that showcases how one can use automata learning to extract finite-state models capturing the RNN's input-output behaviour.
+This repo contains source code that showcases how one can use **automata learning to extract finite-state models capturing the RNN's input-output behaviour**.
 
+Futhermore, in the repo we show how **coverage-guided** equivalence oracles can find counterexamples that other white-box and black-box approaches were unable to find.
+Each counterexample not found by other approaches falsifies their extracted model.
 #### Short example
 ```python
 from aalpy.learning_algs import run_Lstar
@@ -54,12 +56,13 @@ In the file `Comparison_with_White_Box_and_PAC.py` you will find methods compari
 # Compare our approach on with refined-based and bounded L*
 run_comparison('tomita_2', train=False, rnn_class='gru', verbose=True)
 
-# This example shows how transition focus equivalence oracle can be used to efficiently find counterexamples.
-find_bp_cex()
-
-# Show how extensive coverage-based testing can be used to falsify model returned from refinement-based extraction
+# Show how coverage-based testing can be used to falsify model returned from refinement-based extraction
 # approach.
 falsify_refinement_based_model()
+
+# exit()
+# This example shows how transition focus equivalence oracle can be used to efficiently find counterexamples.
+find_bp_cex()
 ```
 Running the code returns following output:
 ```
