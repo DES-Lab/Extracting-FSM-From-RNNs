@@ -18,8 +18,10 @@ from Refinement_based_extraction.Specific_Language_Generation import get_balance
 from Refinement_based_extraction.Tomita_Grammars import tomita_dicts
 from Refinement_based_extraction.Training_Functions import make_train_set_for_target, mixed_curriculum_train
 
-
 # Disable
+from PAC_Oracle import PacOracle
+
+
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')
 
@@ -130,7 +132,7 @@ def train_or_load_rnn(example, num_layers=2, hidden_dim=50, rnn_class=GRUNetwork
         # Save it to file
         rnn.save(f'RNN_Models/WeissComparisonModels/{example}_{nn_props}.rnn')
         print('saving to', f'RNN_Models/WeissComparisonModels/{example}_{nn_props}.rnn')
-        #exit()
+        # exit()
     else:
         # loads the neural network if it has been pretrained... will terminate the execution if weights file does
         # not exist
@@ -139,8 +141,12 @@ def train_or_load_rnn(example, num_layers=2, hidden_dim=50, rnn_class=GRUNetwork
     return rnn, alphabet, train_set
 
 
-def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=GRUNetwork,
-                   insufficient_testing=False, verbose=False):
+rnn_classes = {'gru': GRUNetwork, 'lstm': LSTMNetwork}
+
+
+def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='gru', verbose=False):
+    assert rnn_class in rnn_classes.keys()
+    rnn_class = rnn_classes[rnn_class]
     rnn, alphabet, train_set = train_or_load_rnn(example, num_layers=num_layers, hidden_dim=hidden_dim,
                                                  rnn_class=rnn_class, train=train)
 
@@ -163,50 +169,44 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
     rnn.renew()
 
     if verbose:
-        print('---------------------------------BLACK BOX EXTRACTION--------------------------------------------------')
+        print('---------------------------------PAC-ORACLE (Bounded L*) EXTRACTION----------------------------------------')
+
     sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
 
     alphabet = list(alphabet)
 
-    # define the equivalence oracle
-    if insufficient_testing:
-        eq_oracle = RandomWordEqOracle(alphabet, sul, num_walks=100, min_walk_len=3, max_walk_len=12)
-    else:
-        eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=1000, walk_len=25)
-        if 'tomita' not in example:
-            eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=1000, walk_len=20)
+    pac_oracle = PacOracle(alphabet, sul, delta=0.01, epsilon=0.01, min_walk_len=3, max_walk_len=12)
+    start_pac_time = time.time()
+    pac_model = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=pac_oracle, automaton_type='dfa', max_learning_rounds=10,
+                          print_level=2, cache_and_non_det_check=True, cex_processing='rs')
+    end_pac_time = time.time()
 
+    if verbose:
+        print(
+            '---------------------------------COVERAGE-GUIDED EXTRACTION----------------------------------------')
+
+    rnn.renew()
+    sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
+    # define the equivalence oracle
+    eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=1000, walk_len=25)
+    if 'tomita' not in example:
+        eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=1000, walk_len=20)
     start_black_box = time.time()
     aalpy_dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type='dfa', max_learning_rounds=10,
-                          print_level=2 , cache_and_non_det_check=False, cex_processing='rs')
+                          print_level=2, cache_and_non_det_check=True, cex_processing='rs')
     time_black_box = time.time() - start_black_box
 
     enablePrint()
-    if insufficient_testing:
-        if len(aalpy_dfa.states) == len(dfa_weiss.Q):
-            translated_weiss_2_aalpy = Weiss_to_AALpy_DFA_format(dfa_weiss)
-            sul = DfaSUL(translated_weiss_2_aalpy)
-            eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=1000, walk_len=10)
 
-            cex = eq_oracle.find_cex(aalpy_dfa)
-            if not cex:
-                print(
-                    '-------------------------WHITE-Box vs. BLACK-BOX WITH INSUFFICIENT TESTING -------------------------')
-                print('White-box and Black-box technique extracted the same automaton.')
-                print(f'White-box time: {round(time_white_box, 2)} seconds.')
-                print(f'Black-box time: {round(time_black_box, 2)} seconds.')
-            else:
-                verify_cex(aalpy_dfa, translated_weiss_2_aalpy, rnn, [cex])
-        return
-
-    if len(aalpy_dfa.states) != len(dfa_weiss.Q):
-        print('---------------------------------WHITE vs. BLACK BOX EXTRACTION----------------------------------------')
+    if len(aalpy_dfa.states) != len(dfa_weiss.Q) or len(aalpy_dfa.states) != len(pac_model.states):
+        print('---------------------------------COMPARISON OF EXTRACTIONS----------------------------------------')
         nn_props = F'{"GRU" if rnn_class == GRUNetwork else "LSTM"}_layers_{num_layers}_dim_{hidden_dim}'
         print(f'Example       : {example}')
         print(f'Configuration : {nn_props}')
         print(f"Number of states\n  "
-              f"White-box extraction: {len(dfa_weiss.Q)}\n  "
-              f"Black-box extraction: {len(aalpy_dfa.states)}")
+              f"White-box extraction       : {len(dfa_weiss.Q)}\n  "
+              f"PAC-Based Oracle           : {len(pac_model.states)}\n  "
+              f"Coverage-guided extraction : {len(aalpy_dfa.states)}")
 
         translated_weiss_2_aalpy = Weiss_to_AALpy_DFA_format(dfa_weiss)
 
@@ -227,10 +227,10 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class=G
         if not real_cex:
             print('Spurious CEX')
             assert False
-        #print('Few Counterexamples')
-        #print('  ', cex_set[:3])
+        # print('Few Counterexamples')
+        # print('  ', cex_set[:3])
     else:
-        print('Size of both models: ', len(aalpy_dfa.states))
+        print('Size of all extracted models (refinement-based, pac-based, coverage-based): ', len(aalpy_dfa.states))
 
 
 def falsify_refinement_based_model():
@@ -284,6 +284,7 @@ def find_bp_cex():
     eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=1000, walk_len=20)
 
     cex_set = set()
+    print("Print Format: Time Counterexample")
     for _ in range(10):
         start_time = time.time()
         cex = eq_oracle.find_cex(model)
@@ -295,14 +296,23 @@ def find_bp_cex():
 
 
 if __name__ == '__main__':
-    run_comparison('tomita_4', rnn_class=LSTMNetwork, train=False, insufficient_testing=False, verbose=True)
+    # Compare our approach on with refined-based and bounded L*
+    #run_comparison('tomita_2', train=False, rnn_class='gru', verbose=True)
+
+    # This example shows how transition focus equivalence oracle can be used to efficiently find counterexamples.
+    find_bp_cex()
+
+    # Show how extensive coverage-based testing can be used to falsify model returned from refinement-based extraction
+    # approach.
+    falsify_refinement_based_model()
+
     exit()
     # Run extraction on all pre-trained tomita examples
     for tomita_ex in tomita_dicts.keys():
-        for nn in [GRUNetwork, LSTMNetwork]:
-            run_comparison(tomita_ex, rnn_class=nn, train=False, insufficient_testing=False)
+        for nn in ['gru', 'lstm']:
+            run_comparison(tomita_ex, train=False, rnn_class=nn)
 
     # Run extraction on all pre-trained bp examples
     for i in range(1, 3):
-        for nn in [GRUNetwork, LSTMNetwork]:
-            run_comparison(f'bp_{i}', rnn_class=nn, train=False)
+        for nn in ['gru', 'lstm']:
+            run_comparison(f'bp_{i}', train=False, rnn_class=nn)

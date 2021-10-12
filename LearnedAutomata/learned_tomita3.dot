@@ -1,25 +1,19 @@
 digraph "LearnedAutomata/learned_tomita3" {
 s0 [label=s0, shape=doublecircle];
-s1 [label=s1];
-s2 [label=s2, shape=doublecircle];
+s1 [label=s1, shape=doublecircle];
+s2 [label=s2];
 s3 [label=s3];
-s4 [label=s4];
-s5 [label=s5, shape=doublecircle];
-s6 [label=s6, shape=doublecircle];
-s0 -> s1  [label=0];
-s0 -> s2  [label=1];
-s1 -> s5  [label=0];
-s1 -> s2  [label=1];
-s2 -> s3  [label=0];
-s2 -> s5  [label=1];
-s3 -> s6  [label=0];
-s3 -> s4  [label=1];
-s4 -> s4  [label=0];
+s4 [label=s4, shape=doublecircle];
+s0 -> s0  [label=0];
+s0 -> s1  [label=1];
+s1 -> s2  [label=0];
+s1 -> s0  [label=1];
+s2 -> s4  [label=0];
+s2 -> s3  [label=1];
+s3 -> s3  [label=0];
+s3 -> s3  [label=1];
+s4 -> s2  [label=0];
 s4 -> s4  [label=1];
-s5 -> s5  [label=0];
-s5 -> s2  [label=1];
-s6 -> s3  [label=0];
-s6 -> s6  [label=1];
 __start0 [label="", shape=none];
 __start0 -> s0  [label=""];
 }

@@ -47,6 +47,45 @@ visualize_automaton(dfa)
 ```
 ![Result](results.png)
 
+#### Comparison with Refinement-Based and Bounded (PAC-Oracle) L* learning
+
+In the file `Comparison_with_White_Box_and_PAC.py` you will find methods comparing our approach with other white box and black box approaches.
+```python
+# Compare our approach on with refined-based and bounded L*
+run_comparison('tomita_2', train=False, rnn_class='gru', verbose=True)
+
+# This example shows how transition focus equivalence oracle can be used to efficiently find counterexamples.
+find_bp_cex()
+
+# Show how extensive coverage-based testing can be used to falsify model returned from refinement-based extraction
+# approach.
+falsify_refinement_based_model()
+```
+Running the code returns following output:
+```
+---------------------------------COMPARISON OF EXTRACTIONS----------------------------------------
+Example       : tomita_2
+Configuration : GRU_layers_2_dim_50
+Number of states
+  White-box extraction       : 3
+  PAC-Based Oracle           : 8
+  Coverage-guided extraction : 26 (terminated after 10 rounds)
+Coverage-guided extraction found counterexamples not found by other approaches.
+All examples were classified correctly by the Black-Box model and misclassified by the other approaches.
+
+---------------------------------FALSIFICATION OF EXTRACTED MODEL---------------------------------
+Counterexamples (and time needed to tind them) to the model extracted with the refinement-based or Bounded-L* approach.
+0.1 (((()())((i)))l)
+0.14 ((()))y
+0.03 h(()((())(()))hsx)z)
+0.03 (()()())
+0.1 ())()
+0.03 a(())()()
+0.0 ((j((()g))))(j()
+0.04 x(())()(h(bn())g)
+0.12 ()()()
+
+```
 ## Interactive notebooks/running examples
 In the `notebooks` folder, you can find many examples and associated outputs. Examples are:
 - Train an RNN on the Tomita grammar and Extract DFA
@@ -68,11 +107,12 @@ In the `notebooks` folder, you can find many examples and associated outputs. Ex
 ##
 - `RNN_SULs` - system under learning. Implements [AALpy](https://github.com/DES-Lab/AALpy)'s SUL class
 - `TrainAndExtract.py` - helper function in which one can see how to train RNNs and extract their behavior via automata learning
+- `PAC_Oracle` - PAC Oracle used for comparison with other black-box approach
 ##
-- `Comparison_with_White_Box.py` - comparison of our approach to [Weiss et al.](https://github.com/tech-srl/lstar_extraction)
+- `Comparison_with_White_Box_and_PAC.py` - comparison of our approach to [Weiss et al.](https://github.com/tech-srl/lstar_extraction)
 - `Applications.py` - a proof-of-concept for learning RNNs abstract behavior with mapper component, and learning-based testing of multiple trained RNNs and their applications
 
-## Install and Run
+## Install
 
 To run extraction, only dependencies are [AALpy](https://github.com/DES-Lab/AALpy) and [Dynet](https://dynet.readthedocs.io/en/latest/).
 However, to run a comparison with the refinement-based approach proposed by Weiss et al., further dependencies are required.
@@ -82,7 +122,8 @@ To install, clone this repo (suggestion: create a python virtual environment) an
 pip install -r  requirements.txt
 ``
 
-`TrainAndExtract.py`, `Comparison_with_White_Box.py`, and `Applications.py` all have main function defined at the bottom of the file.
+## Run
+`TrainAndExtract.py`, `Comparison_with_White_Box_and_PAC.py`, and `Applications.py` all have main function defined at the bottom of the file.
 `quick_start.py` has the simple minimal example that shows how to train RNNS and extract multiple models.
 Notebooks folder contains the text output/interactive examples for some examples.
 Furthermore, interactive notebooks can be found in the `notebooks` folder.

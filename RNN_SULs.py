@@ -8,6 +8,7 @@ class RnnBinarySUL(SUL):
     """
     SUL used to learn DFA from RNN Binary Classifiers.
     """
+
     def __init__(self, nn):
         super().__init__()
         self.word = ""
@@ -29,6 +30,7 @@ class RnnMealySUL(SUL):
     """
     SUL used to learn Mealy Machines from RNNs.
     """
+
     def __init__(self, nn, int_2_output_dict: dict):
         super().__init__()
         self.rnn = nn
@@ -51,19 +53,11 @@ class RNN_BinarySUL_for_Weiss_Framework(SUL):
     SUL conforming to the behaviour and methods found in the refinement-based learning framework by Weiss et al.
     https://github.com/tech-srl/lstar_extraction
     """
+
     def __init__(self, nn):
         super().__init__()
         self.word = ""
         self.rnn = nn
-
-    def query(self, input_word: tuple) -> list:
-        self.pre()
-        # Empty string for DFA
-        if len(input_word) == 0:
-            return [self.step(None)]
-        out = [self.predict(input_word)]
-        self.post()
-        return out
 
     def pre(self):
         self.word = ""
@@ -76,15 +70,12 @@ class RNN_BinarySUL_for_Weiss_Framework(SUL):
             self.word += letter
         return self.rnn.classify_word(self.word)
 
-    def predict(self, seq):
-        prediction = self.rnn.classify_word(seq)
-        return prediction
-
 
 class Abstract_Mapper_MQTT_RNN_SUL(SUL):
     """
     SUL implementing the MAPPER component.
     """
+
     def __init__(self, nn, concrete_input_al, concrete_output_al):
         super().__init__()
         self.rnn = nn

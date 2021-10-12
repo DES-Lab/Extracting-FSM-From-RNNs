@@ -51,9 +51,9 @@ def train_and_extract_tomita(tomita_grammar, acc_stop=1., loss_stop=0.005, load=
     dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=state_eq_oracle, automaton_type='dfa',
                     cache_and_non_det_check=True)
 
-    save_automaton_to_file(dfa, f'LearnedAutomata/learned_tomita{tomita_grammar}')
-    visualize_automaton(dfa)
+    #save_automaton_to_file(dfa, f'LearnedAutomata/learned_tomita{tomita_grammar}')
 
+    return dfa
 
 def train_and_extract_bp(path="TrainingDataAndAutomata/balanced()_1.txt", load=False):
     bp_alphabet = list(string.ascii_lowercase + "()")
@@ -75,13 +75,13 @@ def train_and_extract_bp(path="TrainingDataAndAutomata/balanced()_1.txt", load=F
     sul = RnnBinarySUL(rnn)
     alphabet = bp_alphabet
 
-    state_eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=500, walk_len=30,
+    state_eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=500, walk_len=10,
                                             same_state_prob=0.3)
 
     dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=state_eq_oracle, automaton_type='dfa',
                     cache_and_non_det_check=False, max_learning_rounds=5)
 
-    save_automaton_to_file(dfa, f'LearnedAutomata/balanced_parentheses{data_index}')
+    # save_automaton_to_file(dfa, f'LearnedAutomata/balanced_parentheses{data_index}')
     return dfa
 
 
@@ -176,9 +176,11 @@ if __name__ == '__main__':
     # Train on a any of the 7 Tomita grammars and extract the DFA from the trained RNN
     tomita_dfa = train_and_extract_tomita(3, load=False)
 
+    visualize_automaton(tomita_dfa, path='tomitaExample')
     # Train on a Balanced Parentheses Dataset and extract the DFA
-    bp_dfa = train_and_extract_bp()
-
+    bp_dfa = train_and_extract_bp(load=True)
+    visualize_automaton(bp_dfa, path='bpExample')
+    exit()
     # Extract Mealy and Moore machine from RNN trained on the coffee machine FMS
     coffee_machine_Mealy_model = train_RNN_and_extract_FSM('coffee')
     coffee_machine_Moore_model = train_RNN_and_extract_FSM('coffee', automaton_type='moore')

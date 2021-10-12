@@ -148,6 +148,19 @@ class RNNClassifier:
         self.state = out
         return np.argmax((w * out.output()).npvalue())
 
+    def step_internal(self, inp):
+        w = self.W.expr(update=False)
+        str_2_int = self.token_dict[inp] if inp else max(self.token_dict.values()) + 1
+        embedded = self.input_lookup[str_2_int]
+        out = self.state.add_input(embedded)
+        self.state = out
+        #print([round(r,2) for r in [s.vec_value() for s in self.state.h()][0]])
+        return ",".join([str(round(r,2)) for r in [s.vec_value() for s in self.state.h()][0][:2]])
+        return ",".join([str(s.vec_value()) for s in self.state.h()])
+        print(self.state.h())
+        print([exp for exp in self.rnn.get_parameter_expressions()])
+        return np.argmax((w * out.output()).npvalue())
+
     def renew(self):
         dy.renew_cg()
 
