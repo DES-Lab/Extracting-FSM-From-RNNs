@@ -60,6 +60,10 @@ run_comparison('tomita_2', train=False, rnn_class='gru', verbose=True)
 # approach.
 falsify_refinement_based_model()
 
+# Show how extensive coverage-based testing can be used to falsify model returned from bounded L* black-box
+# extraction approach.
+falsify_pac_based_model()
+
 # exit()
 # This example shows how transition focus equivalence oracle can be used to efficiently find counterexamples.
 find_bp_cex()
@@ -125,8 +129,10 @@ To install, clone this repo (suggestion: create a python virtual environment) an
 pip install -r  requirements.txt
 ``
 
-## Run
+## Run and Reproduce
 `TrainAndExtract.py`, `Comparison_with_White_Box_and_PAC.py`, and `Applications.py` all have main function defined at the bottom of the file.
 `quick_start.py` has the simple minimal example that shows how to train RNNS and extract multiple models.
 Notebooks folder contains the text output/interactive examples for some examples.
 Furthermore, interactive notebooks can be found in the `notebooks` folder.
+
+To **reproduce experiments**, simply run the ``__main__`` method in the `Comparison_with_White_Box_and_PAC.py`.
