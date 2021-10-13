@@ -19,7 +19,7 @@ from Refinement_based_extraction.Tomita_Grammars import tomita_dicts
 from Refinement_based_extraction.Training_Functions import make_train_set_for_target, mixed_curriculum_train
 
 # Disable
-from PAC_Oracle import PacOracle
+from PAC_Oracle import PacOracle, TransitionFocusOraclePrime, RandomWMethodEqOraclePrime
 
 
 def blockPrint():
@@ -169,7 +169,8 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='
     rnn.renew()
 
     if verbose:
-        print('---------------------------------PAC-ORACLE (Bounded L*) EXTRACTION----------------------------------------')
+        print(
+            '---------------------------------PAC-ORACLE (Bounded L*) EXTRACTION----------------------------------------')
 
     sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
 
@@ -177,7 +178,8 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='
 
     pac_oracle = PacOracle(alphabet, sul, delta=0.01, epsilon=0.01, min_walk_len=3, max_walk_len=12)
     start_pac_time = time.time()
-    pac_model = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=pac_oracle, automaton_type='dfa', max_learning_rounds=10,
+    pac_model = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=pac_oracle, automaton_type='dfa',
+                          max_learning_rounds=10,
                           print_level=2, cache_and_non_det_check=True, cex_processing='rs')
     end_pac_time = time.time()
 
@@ -272,6 +274,41 @@ def falsify_refinement_based_model():
         print(round(end_time, 2), "".join(cex))
 
 
+def falsify_pac_based_model():
+    """
+    Show how extensive coverage-based testing can be used to falsify model returned from bounden-L* extraction
+    approach.
+    """
+    rnn, alphabet, train_set = train_or_load_rnn('bp_1', num_layers=2, hidden_dim=50,
+                                                 rnn_class=GRUNetwork, train=False)
+
+    # Extract Automaton Using White-Box eq. query
+    rnn.renew()
+
+    pac_sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
+    pac_oracle = PacOracle(alphabet, pac_sul, epsilon=0.001, delta=0.01, min_walk_len=4, max_walk_len=20)
+
+    pac_model = run_Lstar(alphabet, pac_sul, pac_oracle, 'dfa', print_level=1)
+
+    rnn.renew()
+    coverage_sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
+
+    trans_focus = TransitionFocusOraclePrime(alphabet, coverage_sul, num_random_walks=1000, walk_len=20)
+    random_w = RandomWMethodEqOraclePrime(alphabet, coverage_sul, walks_per_state=1500, walk_len=20)
+
+    cex_set = set()
+    for oracle in [trans_focus, random_w]:
+        print(type(oracle).__name__)
+        for _ in range(10):
+            start_time = time.time()
+            cex = oracle.find_cex(pac_model)
+            if not cex or tuple(cex) in cex_set:
+                continue
+            cex_set.add(tuple(cex))
+            end_time = time.time() - start_time
+            print("".join(cex), round(end_time, 2),)
+
+
 def find_bp_cex():
     """
     This example shows how transition focus equivalence oracle can be used to efficiently find counterexamples.
@@ -297,7 +334,7 @@ def find_bp_cex():
 
 if __name__ == '__main__':
     # Compare our approach on with refined-based and bounded L*
-    #run_comparison('tomita_2', train=False, rnn_class='gru', verbose=True)
+    # run_comparison('tomita_2', train=False, rnn_class='gru', verbose=True)
 
     # This example shows how transition focus equivalence oracle can be used to efficiently find counterexamples.
     find_bp_cex()
@@ -306,7 +343,10 @@ if __name__ == '__main__':
     # approach.
     falsify_refinement_based_model()
 
-    exit()
+    # Show how extensive coverage-based testing can be used to falsify model returned from bounded L* black-box
+    # extraction approach.
+    falsify_pac_based_model()
+
     # Run extraction on all pre-trained tomita examples
     for tomita_ex in tomita_dicts.keys():
         for nn in ['gru', 'lstm']:
