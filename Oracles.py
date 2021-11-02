@@ -37,7 +37,7 @@ class PacOracle(Oracle):
                 self.num_steps += 1
 
                 if out_sul != out_hyp:
-                    print(f'Num tests: {i}')
+                    print(f'Num tests: {i+1}')
                     self.sul.post()
                     print(''.join(inputs))
                     return inputs
@@ -91,12 +91,11 @@ class TransitionFocusOraclePrime(Oracle):
                 self.num_steps += 1
 
                 if out_sul != out_hyp:
-                    print(f'Num tests: {i}')
+                    print(f'Num tests: {i+1}')
                     self.sul.post()
                     return inputs
 
         return None
-
 
 class RandomWMethodEqOraclePrime(Oracle):
     """
@@ -158,3 +157,4 @@ class RandomWMethodEqOraclePrime(Oracle):
                     return test_case[:ind + 1]
 
         return None
+
