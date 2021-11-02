@@ -144,7 +144,7 @@ def train_or_load_rnn(example, num_layers=2, hidden_dim=50, rnn_class=GRUNetwork
 rnn_classes = {'gru': GRUNetwork, 'lstm': LSTMNetwork}
 
 
-def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='gru', verbose=True):
+def run_comparison(example, train=False, num_layers=2, hidden_dim=50, rnn_class='gru', verbose=True):
     print('Experiment comparing all learning processes. First white-box refinement based learning will be executed,'
           'then pac-based black-box learning, and finally model-guided learning.')
     assert rnn_class in rnn_classes.keys()
@@ -251,7 +251,7 @@ def falsify_refinement_based_model(exp_name='bp_1'):
     print('Experiment in which we show how model-guided testing can falsify the model learned with refinement-based extraction.')
 
     rnn, alphabet, train_set = train_or_load_rnn(exp_name, num_layers=2, hidden_dim=50,
-                                                 rnn_class=GRUNetwork, train=True)
+                                                 rnn_class=GRUNetwork, train=False)
 
     # initial examples for Weiss et Al
     all_words = sorted(list(train_set.keys()), key=lambda x: len(x))
@@ -372,7 +372,7 @@ def comparison_of_learning_process(exp_name='tomita_3'):
 
 
 if __name__ == '__main__':
-    falsify_refinement_based_model('bp_1')
+    run_comparison('bp_1')
     exit()
 
     # Two experiments showing falsification of PAC-based learned model
