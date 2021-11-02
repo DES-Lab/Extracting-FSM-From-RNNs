@@ -22,6 +22,7 @@ dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=state_eq_oracle, automaton
 save_automaton_to_file(dfa, f'RNN_Models/tomita{3}')
 visualize_automaton(dfa)
 
+exit()
 # train and extract balanced parentheses
 bp_model = train_and_extract_bp(path='TrainingDataAndAutomata/balanced()_2.txt', load=False)
 print("Print extracted model")
