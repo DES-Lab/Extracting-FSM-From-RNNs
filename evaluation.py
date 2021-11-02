@@ -2,7 +2,7 @@ import sys
 from Comparison_with_White_Box_and_PAC import falsify_pac_based_model, falsify_refinement_based_model, run_comparison, \
     comparison_of_learning_process
 
-# exp_name can be {tomita_[1,7]}, eg. tomita_3, tomita_5, or {bp_[1-4], eg. bp_1, bp_2}
+# exp_name can be {tomita_[1,7]}, eg. tomita_3, tomita_5, or bp_1
 # compare_learning_processes exp_name (table 1)
 # falsify_refinement exp_name (table 2)
 # falsify_pac exp_name (table 3)
