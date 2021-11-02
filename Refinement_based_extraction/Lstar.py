@@ -7,8 +7,10 @@ def run_lstar(teacher,time_limit):
     start = clock()
     teacher.counterexample_generator.set_time_limit(time_limit,start)
     table.set_time_limit(time_limit,start)
+    num_learning_rounds = 0
 
     while True:
+        num_learning_rounds += 1
         while True:
             while table.find_and_handle_inconsistency():
                 pass
@@ -23,4 +25,4 @@ def run_lstar(teacher,time_limit):
             break
         start = clock()
         table.add_counterexample(counterexample,teacher.classify_word(counterexample))
-    return dfa
+    return dfa, num_learning_rounds

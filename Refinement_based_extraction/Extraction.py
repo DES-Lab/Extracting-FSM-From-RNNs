@@ -9,7 +9,7 @@ def extract(rnn,time_limit = 50,initial_split_depth = 10,starting_examples=None)
 	guided_teacher = Teacher(rnn,num_dims_initial_split=initial_split_depth,starting_examples=starting_examples)
 	start = clock()
 	try:
-	    run_lstar(guided_teacher,time_limit)
+	    _, learning_rounds = run_lstar(guided_teacher,time_limit)
 	except KeyboardInterrupt: #you can press the stop button in the notebook to stop the extraction any time
 	    print("lstar extraction terminated by user")
 	except TableTimedOut:
@@ -23,4 +23,4 @@ def extract(rnn,time_limit = 50,initial_split_depth = 10,starting_examples=None)
 
 	print("generated counterexamples were: (format: (counterexample, counterexample generation time))")
 	print('\n'.join([str(a) for a in guided_teacher.counterexamples_with_times]))
-	return dfa
+	return dfa, learning_rounds

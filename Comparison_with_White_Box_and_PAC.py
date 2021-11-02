@@ -166,7 +166,7 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='
     else:
         blockPrint()
     start_white_box = time.time()
-    dfa_weiss = extract(rnn, time_limit=500, initial_split_depth=10, starting_examples=starting_examples)
+    dfa_weiss, learning_rounds = extract(rnn, time_limit=500, initial_split_depth=10, starting_examples=starting_examples)
     time_white_box = time.time() - start_white_box
     # Make sure that internal states are back to initial
     rnn.renew()
@@ -181,8 +181,8 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='
 
     pac_oracle = PacOracle(alphabet, sul, delta=0.01, epsilon=0.01, min_walk_len=3, max_walk_len=12)
     start_pac_time = time.time()
-    pac_model = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=pac_oracle, automaton_type='dfa',
-                          max_learning_rounds=10,
+    pac_model, data_pac = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=pac_oracle, automaton_type='dfa',
+                          max_learning_rounds=10, return_data=True,
                           print_level=2, cache_and_non_det_check=True, cex_processing='rs')
     end_pac_time = time.time()
 
@@ -197,8 +197,8 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='
     if 'tomita' not in example:
         eq_oracle = TransitionFocusOraclePrime(alphabet, sul, num_random_walks=1000, walk_len=20)
     start_black_box = time.time()
-    aalpy_dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type='dfa', max_learning_rounds=10,
-                          print_level=2, cache_and_non_det_check=True, cex_processing='rs')
+    aalpy_dfa, data_cov = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type='dfa', max_learning_rounds=10,
+                          print_level=2, cache_and_non_det_check=True, cex_processing='rs', return_data=True)
     time_black_box = time.time() - start_black_box
 
     enablePrint()
@@ -212,6 +212,11 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='
               f"White-box extraction       : {len(dfa_weiss.Q)}\n  "
               f"PAC-Based Oracle           : {len(pac_model.states)}\n  "
               f"Coverage-guided extraction : {len(aalpy_dfa.states)}")
+        print(f"Number of counterexamples found\n  "
+              f"White-box extraction       : {learning_rounds}\n  "
+              f"PAC-Based Oracle           : {data_pac['learning_rounds']}\n  "
+              f"Coverage-guided extraction : {data_cov['learning_rounds']}")
+
 
         translated_weiss_2_aalpy = Weiss_to_AALpy_DFA_format(dfa_weiss)
 
@@ -246,7 +251,7 @@ def falsify_refinement_based_model(exp_name='bp_1'):
     print('Experiment in which we show how model-guided testing can falsify the model learned with refinement-based extraction.')
 
     rnn, alphabet, train_set = train_or_load_rnn(exp_name, num_layers=2, hidden_dim=50,
-                                                 rnn_class=GRUNetwork, train=False)
+                                                 rnn_class=GRUNetwork, train=True)
 
     # initial examples for Weiss et Al
     all_words = sorted(list(train_set.keys()), key=lambda x: len(x))
@@ -258,19 +263,19 @@ def falsify_refinement_based_model(exp_name='bp_1'):
     rnn.renew()
     print("Refinement extraction started.")
     start_white_box = time.time()
-    dfa_weiss = extract(rnn, time_limit=500, initial_split_depth=10, starting_examples=starting_examples)
+    dfa_weiss, learning_rounds = extract(rnn, time_limit=500, initial_split_depth=10, starting_examples=starting_examples)
     time_white_box = time.time() - start_white_box
     # Make sure that internal states are back to initial
     rnn.renew()
 
     white_box_hyp = Weiss_to_AALpy_DFA_format(dfa_weiss)
     sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
+    # eq_oracle = RandomWMethodEqOraclePrime(alphabet, sul, walks_per_state=1500, walk_len=20)
     eq_oracle = TransitionFocusOraclePrime(alphabet, sul, num_random_walks=1000, walk_len=20)
-    eq_oracle = RandomWMethodEqOraclePrime(alphabet, sul, walks_per_state=1500, walk_len=20)
 
     cex_set = set()
-    print(f'Refinement-based learning learned {len(white_box_hyp.states)}-state automaton. Following 10 pairs of '
-          f'outputs are time and number of tests needed to falsify refinement-based model.')
+    print(f'Refinement-based learning learned {len(white_box_hyp.states)}-state automaton. In total it found {learning_rounds - 1} counterexamples.'
+          f' Following 10 pairs of outputs are time and number of tests needed to falsify refinement-based model.')
     for _ in range(10):
         start_time = time.time()
         cex = eq_oracle.find_cex(white_box_hyp)
@@ -367,6 +372,9 @@ def comparison_of_learning_process(exp_name='tomita_3'):
 
 
 if __name__ == '__main__':
+    falsify_refinement_based_model('bp_1')
+    exit()
+
     # Two experiments showing falsification of PAC-based learned model
     falsify_pac_based_model(exp_name='bp_1')
     falsify_pac_based_model('tomita_3')
