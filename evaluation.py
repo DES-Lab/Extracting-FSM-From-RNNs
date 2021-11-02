@@ -9,7 +9,7 @@ from Comparison_with_White_Box_and_PAC import falsify_pac_based_model, falsify_r
 # compare_pac exp_name (table 4)
 
 help_msg = "All commands are in the form <method> <experiment_name>\n" \
-           "<experiment_name> can be 'tomita_[1,7], eg. tomita_3, tomita_5, or bp_[1-4], eg. bp_1, bp_2\n" \
+           "<experiment_name> can be 'tomita_[1,7], eg. tomita_3, tomita_5, or bp_1 for balanced parentheses \n" \
            "(bp_1 and tomita_3 experiments have pretrained model which will be loaded)\n" \
            "Available experiments are:\n" \
            "\t compare_all (Table 1)\n" \

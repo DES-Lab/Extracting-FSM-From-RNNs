@@ -270,7 +270,7 @@ def falsify_refinement_based_model(exp_name='bp_1'):
 
     cex_set = set()
     print(f'Refinement-based learning learned {len(white_box_hyp.states)}-state automaton. Following 10 pairs of '
-          f'outputs are time and number of tests needed to falsify PAC-based model.')
+          f'outputs are time and number of tests needed to falsify refinement-based model.')
     for _ in range(10):
         start_time = time.time()
         cex = eq_oracle.find_cex(white_box_hyp)
