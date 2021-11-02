@@ -37,7 +37,7 @@ class PacOracle(Oracle):
                 self.num_steps += 1
 
                 if out_sul != out_hyp:
-                    print(f'Num tests: {i+1}')
+                    print(f'# tests needed to find a counterexample: {i+1}')
                     self.sul.post()
                     print(''.join(inputs))
                     return inputs
@@ -91,11 +91,12 @@ class TransitionFocusOraclePrime(Oracle):
                 self.num_steps += 1
 
                 if out_sul != out_hyp:
-                    print(f'Num tests: {i+1}')
+                    print(f'# tests needed to find a counterexample: {i+1}')
                     self.sul.post()
                     return inputs
 
         return None
+
 
 class RandomWMethodEqOraclePrime(Oracle):
     """
@@ -105,7 +106,7 @@ class RandomWMethodEqOraclePrime(Oracle):
     walk an element from the characterization set is added to the test case.
     """
 
-    def __init__(self, alphabet: list, sul: SUL, walks_per_state=10, walk_len=20):
+    def __init__(self, alphabet: list, sul: SUL, walks_per_state=10, walk_len=20) -> object:
         """
         Args:
 
@@ -152,9 +153,8 @@ class RandomWMethodEqOraclePrime(Oracle):
                 self.num_steps += 1
 
                 if output_sul != output_hyp:
-                    print(f'Num tests: {num_test_cases}')
+                    print(f'# tests needed to find a counterexample: {num_test_cases}')
                     self.sul.post()
                     return test_case[:ind + 1]
 
         return None
-

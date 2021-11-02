@@ -101,7 +101,7 @@ def verify_cex(aalpy_model, white_box_model, rnn, cex_set):
         else:
             print(output_black_box)
             print(rnn_output)
-            if correct_model and correct_model == 'Black-Box':
+            if correct_model and correct_model == 'Model-guided based':
                 assert False
             correct_model = 'White-Box'
 
@@ -193,9 +193,9 @@ def run_comparison(example, train=True, num_layers=2, hidden_dim=50, rnn_class='
     rnn.renew()
     sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
     # define the equivalence oracle
-    eq_oracle = RandomWMethodEqOracle(alphabet, sul, walks_per_state=1000, walk_len=25)
+    eq_oracle = RandomWMethodEqOraclePrime(alphabet, sul, walks_per_state=1000, walk_len=25)
     if 'tomita' not in example:
-        eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=1000, walk_len=20)
+        eq_oracle = TransitionFocusOraclePrime(alphabet, sul, num_random_walks=1000, walk_len=20)
     start_black_box = time.time()
     aalpy_dfa = run_Lstar(alphabet=alphabet, sul=sul, eq_oracle=eq_oracle, automaton_type='dfa', max_learning_rounds=10,
                           print_level=2, cache_and_non_det_check=True, cex_processing='rs')
@@ -245,7 +245,7 @@ def falsify_refinement_based_model(exp_name='bp_1'):
     """
     print('Experiment in which we show how model-guided testing can falsify the model learned with refinement-based extraction.')
 
-    rnn, alphabet, train_set = train_or_load_rnn('bp_1', num_layers=2, hidden_dim=50,
+    rnn, alphabet, train_set = train_or_load_rnn(exp_name, num_layers=2, hidden_dim=50,
                                                  rnn_class=GRUNetwork, train=False)
 
     # initial examples for Weiss et Al
@@ -265,8 +265,8 @@ def falsify_refinement_based_model(exp_name='bp_1'):
 
     white_box_hyp = Weiss_to_AALpy_DFA_format(dfa_weiss)
     sul = RNN_BinarySUL_for_Weiss_Framework(rnn)
-    eq_oracle = TransitionFocusOracle(alphabet, sul, num_random_walks=1000, walk_len=20)
-    eq_oracle = StatePrefixEqOracle(alphabet, sul, walks_per_state=1500, walk_len=20)
+    eq_oracle = TransitionFocusOraclePrime(alphabet, sul, num_random_walks=1000, walk_len=20)
+    eq_oracle = RandomWMethodEqOraclePrime(alphabet, sul, walks_per_state=1500, walk_len=20)
 
     cex_set = set()
     print(f'Refinement-based learning learned {len(white_box_hyp.states)}-state automaton. Following 10 pairs of '

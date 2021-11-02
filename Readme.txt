@@ -54,10 +54,10 @@ This will train a RNN on the Tomita 3 grammar and extract the automaton from tra
 To reproduce the experiments, run the methods defined in of "/path/to/code/evaluation.py".
 To see available methods, run "/path/to/code/evaluation.py -h".
 Few examples:
-- evaluation.py compare_all tomita_3 (corresponding to Table 1.)
-- evaluation.py falsify_refinement tomita_3 (corresponding to Table 2.)
-- evaluation.py falsify_pac bp_1 (corresponding to Table 3.)
-- evaluation.py compare_pac bp_1 (corresponding to Table 4.)
+- python evaluation.py compare_all tomita_3 (corresponding to Table 1.)
+- python evaluation.py falsify_refinement tomita_3 (corresponding to Table 2.)
+- python evaluation.py falsify_pac bp_1 (corresponding to Table 3.)
+- python evaluation.py compare_pac bp_1 (corresponding to Table 4.)
 
 Due to the randomness involved in multiple processes, results may vary (not substantially) between runs.
 
