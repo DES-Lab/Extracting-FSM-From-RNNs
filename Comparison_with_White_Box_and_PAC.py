@@ -233,10 +233,10 @@ def run_comparison(example, train=False, num_layers=2, hidden_dim=50, rnn_class=
 
         cex_set.sort(key=len)
         # verify that the counterexamples are not spurios and find out which model is correct one
-        real_cex = verify_cex(aalpy_dfa, translated_weiss_2_aalpy, rnn, cex_set)
-        if not real_cex:
-            print('Spurious CEX')
-            assert False
+        # real_cex = verify_cex(aalpy_dfa, translated_weiss_2_aalpy, rnn, cex_set)
+        # if not real_cex:
+        #    print('Spurious CEX')
+        #    assert False
         # print('Few Counterexamples')
         # print('  ', cex_set[:3])
     else:
