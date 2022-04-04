@@ -187,7 +187,10 @@ python3.6 Comparison_with_White_Box_and_PAC.py
 will execute all experiments found in the paper and will print some information on the learning process on the console. As noted above, results may vary between runs due to the randomness involved.
 
 # Availability
-This artifact is available at [figshare](https://figshare.com/s/2ab12fec60db3087b5a3). This is currently a private link. After acceptance, we will publish the artifact via figshare, thus assigning a DOI to it and making it permanently publicly available.
+This artifact is available at:
+```
+https://doi.org/10.5281/zenodo.6412571
+```
 
 The source code is also available at [GitHub](https://github.com/DES-Lab/Extracting-FSM-From-RNNs).
 
