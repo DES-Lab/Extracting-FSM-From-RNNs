@@ -45,7 +45,7 @@ After the successful completion of these steps, the experiments can be performed
 
 ## Checking the Setup
 
-To check whether the setup was successful, run the main method of "/path/to/code/quick_start.py" using
+To check whether the setup was successful, run the of "/path/to/code/quick_start.py" using
 ```
 python3.6 quick_start.py
 ```

@@ -135,4 +135,4 @@ pip install -r  requirements.txt
 Notebooks folder contains the text output/interactive examples for some examples.
 Furthermore, interactive notebooks can be found in the `notebooks` folder.
 
-To **reproduce experiments**, simply run the ``__main__`` method in the `Comparison_with_White_Box_and_PAC.py`.
+To **reproduce experiments**, simply run the `Comparison_with_White_Box_and_PAC.py`.
