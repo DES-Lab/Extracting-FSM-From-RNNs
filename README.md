@@ -1,4 +1,6 @@
 # Black-Box Extraction of RNN's Input-Output Behaviour via Automata Learning
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6412571.svg)](https://doi.org/10.5281/zenodo.6412571)
+
 
 ![High Level Method](high_level_process.png)
 This repo contains source code that showcases how one can use **automata learning to extract finite-state models capturing the RNN's input-output behaviour**.
